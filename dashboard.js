@@ -1,8 +1,11 @@
 /* IBGE Analytics — dashboard.js
-   Interações da interface.
+   Interações da interface + guarda de autenticação via Firebase.
    Os números exibidos no HTML são demonstrativos até a integração com a fonte real do IBGE.
 */
 "use strict";
+
+import { auth } from "./firebase-config.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 
 document.addEventListener("DOMContentLoaded", () => new Dashboard().init());
 
@@ -18,6 +21,7 @@ class Dashboard {
   }
 
   init() {
+    this.guardAuth();
     this.navigation();
     this.searching();
     this.filters();
@@ -26,6 +30,29 @@ class Dashboard {
     this.actions();
     this.shortcuts();
     this.animateCards();
+    this.logoutLinks();
+  }
+
+  guardAuth() {
+    // Sem sessão ativa no Firebase, volta pro login. Se logado, mostra o e-mail real.
+    onAuthStateChanged(auth, user => {
+      if (!user) {
+        window.location.href = "login.html";
+        return;
+      }
+      const nameEl = this.profile?.querySelector("strong");
+      if (nameEl) nameEl.textContent = user.email;
+    });
+  }
+
+  logoutLinks() {
+    document.querySelectorAll('a[href="login.html"]').forEach(link => {
+      link.addEventListener("click", async e => {
+        e.preventDefault();
+        await signOut(auth);
+        window.location.href = "login.html";
+      });
+    });
   }
 
   navigation() {
@@ -116,11 +143,15 @@ class Dashboard {
       menu.style.top = `${rect.bottom + window.scrollY + 8}px`;
       menu.style.right = `${Math.max(16, window.innerWidth - rect.right)}px`;
 
-      menu.addEventListener("click", event => {
+      menu.addEventListener("click", async event => {
         const action = event.target.closest("button")?.dataset.action;
         if (!action) return;
-        if (action === "logout") window.location.href = "login.html";
-        else this.toast(action === "profile" ? "Perfil administrativo." : "Configurações administrativas.", "info");
+        if (action === "logout") {
+          await signOut(auth);
+          window.location.href = "login.html";
+        } else {
+          this.toast(action === "profile" ? "Perfil administrativo." : "Configurações administrativas.", "info");
+        }
         menu.remove();
       });
 

@@ -1,8 +1,18 @@
 /* IBGE Analytics — login.js
-   Validação no cliente e preparação para futura API de autenticação.
-   Nunca coloque credenciais reais neste arquivo.
+   Validação no cliente + autenticação real via Firebase Authentication.
+   Nunca coloque credenciais reais neste arquivo — apenas a config pública do Firebase
+   fica em firebase-config.js.
 */
 "use strict";
+
+import { auth } from "./firebase-config.js";
+import {
+  signInWithEmailAndPassword,
+  setPersistence,
+  browserLocalPersistence,
+  browserSessionPersistence,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 
 document.addEventListener("DOMContentLoaded", () => new LoginPage().init());
 
@@ -18,12 +28,20 @@ class LoginPage {
   init() {
     if (!this.form) return;
     this.restoreEmail();
+    this.redirectIfLoggedIn();
     [this.email, this.password].forEach(input => {
       input?.addEventListener("blur", () => this.validate(input));
       input?.addEventListener("input", () => this.clearError(input));
     });
     this.passwordVisibility();
     this.form.addEventListener("submit", e => this.submitLogin(e));
+  }
+
+  redirectIfLoggedIn() {
+    // Se já existe uma sessão válida do Firebase, pula direto pro painel.
+    onAuthStateChanged(auth, user => {
+      if (user) window.location.href = "dashboard.html";
+    });
   }
 
   validate(input) {
@@ -88,28 +106,40 @@ class LoginPage {
 
     this.setLoading(true);
 
-    /*
-      FUTURA API:
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({
-          email: this.email.value,
-          password: this.password.value
-        })
-      });
-    */
+    try {
+      // "Manter conectado" controla se a sessão sobrevive ao fechar o navegador
+      // (local) ou se expira ao fechar a aba (session).
+      await setPersistence(
+        auth,
+        this.remember?.checked ? browserLocalPersistence : browserSessionPersistence
+      );
 
-    await new Promise(resolve => setTimeout(resolve, 650));
+      await signInWithEmailAndPassword(auth, this.email.value.trim(), this.password.value);
 
-    if (this.remember?.checked) localStorage.setItem("ibge_admin_email", this.email.value.trim());
-    else localStorage.removeItem("ibge_admin_email");
+      if (this.remember?.checked) localStorage.setItem("ibge_admin_email", this.email.value.trim());
+      else localStorage.removeItem("ibge_admin_email");
 
-    this.message("Acesso autorizado. Abrindo o painel...", "success");
+      this.message("Acesso autorizado. Abrindo o painel...", "success");
+      setTimeout(() => {
+        window.location.href = "dashboard.html";
+      }, 650);
+    } catch (error) {
+      this.setLoading(false);
+      this.message(this.friendlyError(error.code), "error");
+    }
+  }
 
-    setTimeout(() => {
-      window.location.href = "dashboard.html";
-    }, 650);
+  friendlyError(code) {
+    const messages = {
+      "auth/invalid-email": "E-mail inválido.",
+      "auth/user-disabled": "Esta conta foi desativada.",
+      "auth/user-not-found": "E-mail ou senha incorretos.",
+      "auth/wrong-password": "E-mail ou senha incorretos.",
+      "auth/invalid-credential": "E-mail ou senha incorretos.",
+      "auth/too-many-requests": "Muitas tentativas seguidas. Aguarde alguns minutos.",
+      "auth/network-request-failed": "Falha de conexão. Verifique sua internet."
+    };
+    return messages[code] || "Não foi possível entrar. Tente novamente.";
   }
 
   restoreEmail() {
