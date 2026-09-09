@@ -38,9 +38,9 @@ class LoginPage {
   }
 
   redirectIfLoggedIn() {
-    // Se já existe uma sessão válida do Firebase, pula direto pro painel.
+    // Se já existe uma sessão válida do Firebase, pula direto pro painel administrativo.
     onAuthStateChanged(auth, user => {
-      if (user) window.location.href = "dashboard.html";
+      if (user) window.location.href = "admin.html";
     });
   }
 
@@ -121,7 +121,7 @@ class LoginPage {
 
       this.message("Acesso autorizado. Abrindo o painel...", "success");
       setTimeout(() => {
-        window.location.href = "dashboard.html";
+        window.location.href = "admin.html";
       }, 650);
     } catch (error) {
       this.setLoading(false);

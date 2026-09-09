@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IBGE Analytics — Administração de Dados</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="dashboard.css">
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">IB</div>
+        <div>
+          <strong>IBGE</strong>
+          <span>Analytics</span>
+        </div>
+      </div>
+
+      <nav class="main-nav" aria-label="Navegação principal">
+        <a class="nav-item" href="dashboard.html">
+          <span class="nav-icon">⌂</span>
+          <span>Dashboard público</span>
+        </a>
+        <a class="nav-item active" href="admin.html">
+          <span class="nav-icon">▤</span>
+          <span>Administração de dados</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-card">
+        <div class="sidebar-card-icon">✦</div>
+        <strong>Área restrita</strong>
+        <p>Alterações feitas aqui refletem direto no dashboard público.</p>
+      </div>
+
+      <div class="sidebar-bottom">
+        <a class="nav-item" href="login.html" id="logoutLink"><span class="nav-icon">↪</span><span>Sair</span></a>
+      </div>
+    </aside>
+
+    <main class="content">
+      <header class="topbar">
+        <div class="search-box">
+          <span>⌕</span>
+          <input type="search" id="adminSearch" placeholder="Buscar por nome, UF ou região...">
+        </div>
+        <div class="top-actions">
+          <div class="profile">
+            <div class="avatar">A</div>
+            <div>
+              <strong id="adminEmail">Administrador</strong>
+              <span>Acesso total</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <section class="page-heading">
+        <div>
+          <span class="eyebrow">PAINEL DE DADOS</span>
+          <h1>Administração de indicadores</h1>
+          <p>Cadastre, edite ou remova registros de estados e municípios.</p>
+        </div>
+      </section>
+
+      <section class="admin-grid">
+        <article class="panel form-panel">
+          <div class="panel-header">
+            <div>
+              <h2 id="formTitle">Novo registro</h2>
+              <span>Preencha os campos abaixo</span>
+            </div>
+          </div>
+
+          <form id="recordForm" class="record-form">
+            <input type="hidden" id="recordId">
+
+            <label for="tipo">Tipo de registro</label>
+            <select id="tipo" required>
+              <option value="municipio">Município</option>
+              <option value="estado">Estado</option>
+            </select>
+
+            <label for="nome">Nome</label>
+            <input id="nome" type="text" placeholder="Ex.: São Paulo" required>
+
+            <label for="uf">Estado (UF)</label>
+            <select id="uf" required></select>
+
+            <label for="regiao">Região</label>
+            <input id="regiao" type="text" disabled>
+
+            <div class="form-row">
+              <div>
+                <label for="populacao">População</label>
+                <input id="populacao" type="number" min="0" placeholder="Ex.: 11451245" required>
+              </div>
+              <div>
+                <label for="ano">Ano de referência</label>
+                <input id="ano" type="number" min="1900" max="2100" placeholder="Ex.: 2025" required>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div>
+                <label for="pib">PIB (em R$ bilhões)</label>
+                <input id="pib" type="number" min="0" step="0.01" placeholder="Ex.: 3456.8">
+              </div>
+              <div>
+                <label for="idhm">IDHM (0 a 1)</label>
+                <input id="idhm" type="number" min="0" max="1" step="0.001" placeholder="Ex.: 0.805">
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="submit-btn" id="saveBtn">Salvar registro</button>
+              <button type="button" class="secondary-btn" id="cancelEditBtn" hidden>Cancelar edição</button>
+            </div>
+            <div class="form-message" id="formMessage"></div>
+          </form>
+        </article>
+
+        <article class="panel table-panel">
+          <div class="panel-header">
+            <div>
+              <h2>Registros cadastrados</h2>
+              <span id="recordCount">0 registros</span>
+            </div>
+            <select id="filterTipo" aria-label="Filtrar por tipo">
+              <option value="">Todos os tipos</option>
+              <option value="municipio">Municípios</option>
+              <option value="estado">Estados</option>
+            </select>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>UF</th>
+                  <th>Região</th>
+                  <th>População</th>
+                  <th>PIB (R$ bi)</th>
+                  <th>IDHM</th>
+                  <th>Ano</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="recordsBody">
+                <tr><td colspan="8">Carregando registros...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      <footer class="footer">
+        <span>IBGE Analytics</span>
+        <span>Painel administrativo · alterações sincronizadas com o Firestore</span>
+      </footer>
+    </main>
+  </div>
+
+  <script type="module" src="admin.js"></script>
+</body>
+</html>

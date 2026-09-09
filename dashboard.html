@@ -21,37 +21,20 @@
       </div>
 
       <nav class="main-nav" aria-label="Navegação principal">
-        <a class="nav-item active" href="#">
+        <a class="nav-item active" href="dashboard.html">
           <span class="nav-icon">⌂</span>
           <span>Visão geral</span>
-        </a>
-        <a class="nav-item" href="#">
-          <span class="nav-icon">⌖</span>
-          <span>Municípios</span>
-        </a>
-        <a class="nav-item" href="#">
-          <span class="nav-icon">▧</span>
-          <span>Estados</span>
-        </a>
-        <a class="nav-item" href="#">
-          <span class="nav-icon">▥</span>
-          <span>Indicadores</span>
-        </a>
-        <a class="nav-item" href="#">
-          <span class="nav-icon">▤</span>
-          <span>Relatórios</span>
         </a>
       </nav>
 
       <div class="sidebar-card">
         <div class="sidebar-card-icon">✦</div>
-        <strong>Dados oficiais</strong>
-        <p>Informações para acompanhar o Brasil em números.</p>
+        <strong>Dados abertos</strong>
+        <p>Painel público de acompanhamento de indicadores do Brasil.</p>
       </div>
 
       <div class="sidebar-bottom">
-        <a class="nav-item" href="#"><span class="nav-icon">⚙</span><span>Configurações</span></a>
-        <a class="nav-item" href="login.html"><span class="nav-icon">↪</span><span>Sair</span></a>
+        <a class="nav-item" href="login.html"><span class="nav-icon">⚙</span><span>Acesso administrativo</span></a>
       </div>
     </aside>
 
@@ -59,77 +42,87 @@
       <header class="topbar">
         <div class="search-box">
           <span>⌕</span>
-          <input type="search" placeholder="Pesquisar por município, estado ou indicador...">
+          <input type="search" id="tableSearch" placeholder="Pesquisar por município...">
           <kbd>Ctrl + K</kbd>
         </div>
         <div class="top-actions">
           <button class="icon-btn" aria-label="Notificações">♧</button>
-          <div class="profile">
-            <div class="avatar">A</div>
-            <div>
-              <strong>Administrador</strong>
-              <span>Acesso total</span>
-            </div>
-            <span class="chevron">⌄</span>
-          </div>
         </div>
       </header>
 
       <section class="page-heading">
         <div>
           <span class="eyebrow">PAINEL DE DADOS</span>
-          <h1>Bem-vindo, Administrador</h1>
-          <p>Acompanhe os principais indicadores do Brasil em um só lugar.</p>
+          <h1>Indicadores do Brasil</h1>
+          <p>Acompanhe os principais indicadores do país em um só lugar.</p>
         </div>
         <div class="update-card">
           <div class="update-icon">◷</div>
           <div>
-            <span>Última atualização</span>
-            <strong>21 ago. 2025 · 13:42</strong>
+            <span>Registros carregados</span>
+            <strong id="lastUpdate">carregando...</strong>
           </div>
-          <span class="status-dot">● Dados atualizados</span>
+          <span class="status-dot" id="statusDot">● Conectando ao Firestore</span>
         </div>
+      </section>
+
+      <section class="filters-bar" aria-label="Filtros">
+        <div class="filter-field">
+          <label for="filterRegiao">Região</label>
+          <select id="filterRegiao">
+            <option value="">Todas as regiões</option>
+          </select>
+        </div>
+        <div class="filter-field">
+          <label for="filterEstado">Estado</label>
+          <select id="filterEstado">
+            <option value="">Todos os estados</option>
+          </select>
+        </div>
+        <div class="filter-field">
+          <label for="filterAno">Período (ano)</label>
+          <select id="filterAno">
+            <option value="">Todos os anos</option>
+          </select>
+        </div>
+        <button type="button" id="clearFilters" class="secondary-btn">Limpar filtros</button>
       </section>
 
       <section class="kpi-grid">
         <article class="kpi-card">
           <div class="kpi-icon">◉</div>
           <div class="kpi-body">
-            <span>População do Brasil</span>
-            <strong>203.080.756</strong>
-            <small><b>↑ 0,74%</b> projeção 2025</small>
+            <span>População (filtro atual)</span>
+            <strong id="kpiPopulacao">—</strong>
+            <small id="kpiPopulacaoSub">carregando...</small>
           </div>
-          <div class="sparkline">⌁⌁⌁</div>
         </article>
 
         <article class="kpi-card">
           <div class="kpi-icon">▣</div>
           <div class="kpi-body">
-            <span>Total de Municípios</span>
-            <strong>5.570</strong>
-            <small><b class="neutral">= 0,00%</b> estável</small>
+            <span>Municípios cadastrados</span>
+            <strong id="kpiMunicipios">—</strong>
+            <small class="neutral">no filtro atual</small>
           </div>
-          <div class="sparkline">⌁⌁</div>
         </article>
 
         <article class="kpi-card">
           <div class="kpi-icon">◇</div>
           <div class="kpi-body">
-            <span>Total de Estados</span>
-            <strong>27</strong>
-            <small><b class="neutral">= 0,00%</b> estável</small>
+            <span>Estados representados</span>
+            <strong id="kpiEstados">—</strong>
+            <small class="neutral">no filtro atual</small>
           </div>
-          <div class="sparkline">⌁⌁⌁</div>
         </article>
 
         <article class="kpi-card">
           <div class="kpi-icon">↗</div>
           <div class="kpi-body">
-            <span>PIB do Brasil</span>
-            <strong>R$ 11,7 tri</strong>
-            <small><b>↑ 2,9%</b> estimativa 2025</small>
+            <span>PIB somado</span>
+            <strong id="kpiPib">—</strong>
+            <small id="kpiPibSub">carregando...</small>
           </div>
-          <div class="sparkline">⌁⌁⌁</div>
         </article>
       </section>
 
@@ -137,39 +130,32 @@
         <article class="panel chart-panel wide">
           <div class="panel-header">
             <div>
-              <h2>Evolução da população brasileira</h2>
-              <span>Em milhões de habitantes</span>
+              <h2>Evolução da população</h2>
+              <span>Somatório por ano de referência, conforme os filtros ativos</span>
             </div>
-            <select aria-label="Filtro do gráfico">
-              <option>Brasil</option>
-              <option>Norte</option>
-              <option>Nordeste</option>
-              <option>Sudeste</option>
-              <option>Sul</option>
-              <option>Centro-Oeste</option>
-            </select>
           </div>
 
-          <div class="line-chart" aria-label="Gráfico ilustrativo">
-            <div class="y-labels"><span>210</span><span>200</span><span>190</span><span>180</span><span>170</span></div>
+          <div class="line-chart" aria-label="Gráfico de evolução populacional">
+            <div class="y-labels" id="chartYLabels"></div>
             <div class="chart-area">
               <div class="grid-line"></div>
               <div class="grid-line"></div>
               <div class="grid-line"></div>
               <div class="grid-line"></div>
               <div class="grid-line"></div>
-              <svg viewBox="0 0 800 310" preserveAspectRatio="none" role="img">
+              <svg viewBox="0 0 800 310" preserveAspectRatio="none" role="img" id="chartSvg">
                 <defs>
                   <linearGradient id="area" x1="0" x2="0" y1="0" y2="1">
                     <stop offset="0%" stop-color="#2196ff" stop-opacity=".28"/>
                     <stop offset="100%" stop-color="#2196ff" stop-opacity="0"/>
                   </linearGradient>
                 </defs>
-                <path d="M0 250 L90 229 L180 210 L270 187 L360 165 L450 142 L540 116 L630 92 L720 68 L800 52 L800 310 L0 310 Z" fill="url(#area)"/>
-                <path d="M0 250 L90 229 L180 210 L270 187 L360 165 L450 142 L540 116 L630 92 L720 68 L800 52" fill="none" stroke="#2196ff" stroke-width="4"/>
+                <path id="chartAreaPath" d="" fill="url(#area)"/>
+                <path id="chartLinePath" d="" fill="none" stroke="#2196ff" stroke-width="4"/>
               </svg>
-              <div class="x-labels"><span>2010</span><span>2012</span><span>2014</span><span>2016</span><span>2018</span><span>2020</span><span>2022</span><span>2024</span><span>2025</span></div>
+              <div class="x-labels" id="chartXLabels"></div>
             </div>
+            <p class="empty-hint" id="chartEmptyHint" hidden>Sem dados suficientes para desenhar o gráfico. Cadastre registros com anos diferentes no painel administrativo.</p>
           </div>
         </article>
 
@@ -177,24 +163,17 @@
           <div class="panel-header">
             <div>
               <h2>População por região</h2>
-              <span>Distribuição regional</span>
+              <span>Distribuição regional · clique para filtrar</span>
             </div>
-            <button class="more-btn">•••</button>
           </div>
           <div class="region-content">
             <div class="map-placeholder">
               <div class="brazil-shape">BR</div>
-              <span>Mapa interativo</span>
+              <span>Mapa ilustrativo</span>
             </div>
-            <div class="region-list">
-              <div><i></i><span>Sudeste</span><strong>89,8 mi</strong><em>44,2%</em></div>
-              <div><i></i><span>Nordeste</span><strong>57,1 mi</strong><em>28,1%</em></div>
-              <div><i></i><span>Sul</span><strong>30,3 mi</strong><em>14,9%</em></div>
-              <div><i></i><span>Norte</span><strong>18,7 mi</strong><em>9,2%</em></div>
-              <div><i></i><span>Centro-Oeste</span><strong>7,0 mi</strong><em>3,4%</em></div>
-            </div>
+            <div class="region-list" id="regionList"></div>
           </div>
-          <div class="progress-bar"><span style="width:44.2%"></span><span style="width:28.1%"></span><span style="width:14.9%"></span><span style="width:9.2%"></span><span style="width:3.4%"></span></div>
+          <div class="progress-bar" id="regionProgressBar"></div>
         </article>
 
         <article class="panel ranking-panel">
@@ -203,39 +182,30 @@
               <h2>PIB por estado</h2>
               <span>Em bilhões de R$</span>
             </div>
-            <select aria-label="Quantidade de estados">
-              <option>Top 5</option>
-              <option>Top 10</option>
+            <select id="rankingLimit" aria-label="Quantidade de estados">
+              <option value="5">Top 5</option>
+              <option value="10">Top 10</option>
             </select>
           </div>
-          <div class="bars">
-            <div class="bar-row"><b>1</b><span>SP</span><div class="bar"><i style="width:100%"></i></div><strong>3.456,8</strong></div>
-            <div class="bar-row"><b>2</b><span>RJ</span><div class="bar"><i style="width:34.8%"></i></div><strong>1.202,1</strong></div>
-            <div class="bar-row"><b>3</b><span>MG</span><div class="bar"><i style="width:29.8%"></i></div><strong>1.031,4</strong></div>
-            <div class="bar-row"><b>4</b><span>RS</span><div class="bar"><i style="width:19%"></i></div><strong>655,8</strong></div>
-            <div class="bar-row"><b>5</b><span>PR</span><div class="bar"><i style="width:18.3%"></i></div><strong>634,2</strong></div>
+          <div class="bars" id="rankingBars">
+            <p class="empty-hint">Sem dados de PIB cadastrados ainda.</p>
           </div>
         </article>
 
         <article class="panel table-panel wide">
           <div class="panel-header">
             <div>
-              <h2>Maiores municípios por população</h2>
-              <span>Ranking nacional</span>
+              <h2>Municípios</h2>
+              <span>Clique em um município para ver o detalhamento</span>
             </div>
-            <a class="text-link" href="#">Ver todos →</a>
           </div>
           <div class="table-wrap">
             <table>
               <thead>
-                <tr><th>#</th><th>Município</th><th>Estado</th><th>População</th><th>Variação</th></tr>
+                <tr><th>#</th><th>Município</th><th>Estado</th><th>População</th><th>Ano</th></tr>
               </thead>
-              <tbody>
-                <tr><td>01</td><td><span class="city-dot"></span>São Paulo</td><td>SP</td><td>11.451.245</td><td class="positive">↑ 0,4%</td></tr>
-                <tr><td>02</td><td><span class="city-dot"></span>Rio de Janeiro</td><td>RJ</td><td>6.211.423</td><td class="positive">↑ 0,2%</td></tr>
-                <tr><td>03</td><td><span class="city-dot"></span>Brasília</td><td>DF</td><td>3.055.149</td><td class="positive">↑ 0,5%</td></tr>
-                <tr><td>04</td><td><span class="city-dot"></span>Salvador</td><td>BA</td><td>2.418.005</td><td class="positive">↑ 0,1%</td></tr>
-                <tr><td>05</td><td><span class="city-dot"></span>Fortaleza</td><td>CE</td><td>2.428.678</td><td class="positive">↑ 0,3%</td></tr>
+              <tbody id="cityTableBody">
+                <tr><td colspan="5">Carregando dados...</td></tr>
               </tbody>
             </table>
           </div>
@@ -246,13 +216,13 @@
           <span class="eyebrow">DADOS ABERTOS</span>
           <h2>Transforme dados em decisões.</h2>
           <p>Explore indicadores, compare regiões e acompanhe a evolução do Brasil.</p>
-          <button class="primary-btn">Explorar indicadores <span>→</span></button>
+          <button class="primary-btn" id="exploreBtn">Explorar municípios <span>→</span></button>
         </article>
       </section>
 
       <footer class="footer">
         <span>IBGE Analytics</span>
-        <span>Interface demonstrativa · preparada para integração com dados reais</span>
+        <span>Dados carregados diretamente do Firestore · painel demonstrativo</span>
       </footer>
     </main>
   </div>

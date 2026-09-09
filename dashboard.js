@@ -1,179 +1,99 @@
 /* IBGE Analytics — dashboard.js
-   Interações da interface + guarda de autenticação via Firebase.
-   Os números exibidos no HTML são demonstrativos até a integração com a fonte real do IBGE.
+   Dashboard público (sem login). Lê a coleção "localidades" do Firestore
+   em tempo real e recalcula KPIs, gráfico, ranking e tabela conforme os filtros.
 */
 "use strict";
 
-import { auth } from "./firebase-config.js";
-import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+import { db } from "./firebase-config.js";
+import { collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+import { ESTADOS, REGIOES } from "./dados-brasil.js";
+
+const COLLECTION = "localidades";
 
 document.addEventListener("DOMContentLoaded", () => new Dashboard().init());
 
 class Dashboard {
   constructor() {
-    this.nav = [...document.querySelectorAll(".main-nav .nav-item")];
-    this.search = document.querySelector(".search-box input");
-    this.regionSelect = document.querySelector(".chart-panel select");
-    this.rankingSelect = document.querySelector(".ranking-panel select");
+    this.filterRegiao = document.querySelector("#filterRegiao");
+    this.filterEstado = document.querySelector("#filterEstado");
+    this.filterAno = document.querySelector("#filterAno");
+    this.clearFiltersBtn = document.querySelector("#clearFilters");
+    this.tableSearch = document.querySelector("#tableSearch");
+    this.rankingLimit = document.querySelector("#rankingLimit");
     this.notificationButton = document.querySelector(".icon-btn");
-    this.profile = document.querySelector(".profile");
-    this.rows = [...document.querySelectorAll("tbody tr")];
+    this.exploreBtn = document.querySelector("#exploreBtn");
+
+    this.lastUpdate = document.querySelector("#lastUpdate");
+    this.statusDot = document.querySelector("#statusDot");
+
+    this.kpiPopulacao = document.querySelector("#kpiPopulacao");
+    this.kpiPopulacaoSub = document.querySelector("#kpiPopulacaoSub");
+    this.kpiMunicipios = document.querySelector("#kpiMunicipios");
+    this.kpiEstados = document.querySelector("#kpiEstados");
+    this.kpiPib = document.querySelector("#kpiPib");
+    this.kpiPibSub = document.querySelector("#kpiPibSub");
+
+    this.chartYLabels = document.querySelector("#chartYLabels");
+    this.chartXLabels = document.querySelector("#chartXLabels");
+    this.chartAreaPath = document.querySelector("#chartAreaPath");
+    this.chartLinePath = document.querySelector("#chartLinePath");
+    this.chartEmptyHint = document.querySelector("#chartEmptyHint");
+    this.chartSvg = document.querySelector("#chartSvg");
+
+    this.regionList = document.querySelector("#regionList");
+    this.regionProgressBar = document.querySelector("#regionProgressBar");
+    this.rankingBars = document.querySelector("#rankingBars");
+    this.cityTableBody = document.querySelector("#cityTableBody");
+
+    this.allRecords = [];
   }
 
   init() {
-    this.guardAuth();
-    this.navigation();
-    this.searching();
-    this.filters();
-    this.notifications();
-    this.profileMenu();
-    this.actions();
+    this.fillFilterOptions();
+    this.bindEvents();
+    this.listenToRecords();
     this.shortcuts();
-    this.animateCards();
-    this.logoutLinks();
   }
 
-  guardAuth() {
-    // Sem sessão ativa no Firebase, volta pro login. Se logado, mostra o e-mail real.
-    onAuthStateChanged(auth, user => {
-      if (!user) {
-        window.location.href = "login.html";
-        return;
-      }
-      const nameEl = this.profile?.querySelector("strong");
-      if (nameEl) nameEl.textContent = user.email;
-    });
+  fillFilterOptions() {
+    this.filterRegiao.innerHTML = `<option value="">Todas as regiões</option>` +
+      REGIOES.map(r => `<option value="${r}">${r}</option>`).join("");
+
+    this.filterEstado.innerHTML = `<option value="">Todos os estados</option>` +
+      ESTADOS.map(e => `<option value="${e.uf}">${e.uf} — ${e.nome}</option>`).join("");
   }
 
-  logoutLinks() {
-    document.querySelectorAll('a[href="login.html"]').forEach(link => {
-      link.addEventListener("click", async e => {
-        e.preventDefault();
-        await signOut(auth);
-        window.location.href = "login.html";
-      });
-    });
-  }
-
-  navigation() {
-    this.nav.forEach(item => item.addEventListener("click", e => {
-      e.preventDefault();
-      this.nav.forEach(x => x.classList.remove("active"));
-      item.classList.add("active");
-      const name = item.querySelector("span:last-child")?.textContent.trim();
-      if (name) this.toast(`Seção "${name}" selecionada.`, "info");
-    }));
-  }
-
-  searching() {
-    this.search?.addEventListener("input", () => {
-      const term = this.search.value.trim().toLowerCase();
-      this.rows.forEach(row => row.hidden = Boolean(term) && !row.textContent.toLowerCase().includes(term));
-    });
-
-    this.search?.addEventListener("focus", () => {
-      this.search.closest(".search-box")?.classList.add("is-focused");
-    });
-
-    this.search?.addEventListener("blur", () => {
-      this.search.closest(".search-box")?.classList.remove("is-focused");
-    });
-  }
-
-  filters() {
-    this.regionSelect?.addEventListener("change", e => {
-      const region = e.target.value;
-      const title = document.querySelector(".chart-panel h2");
-      if (title) {
-        title.textContent = region === "Brasil"
-          ? "Evolução da população brasileira"
-          : `Evolução da população — ${region}`;
-      }
-      document.querySelector(".line-chart")?.animate(
-        [{ opacity: .45, transform: "translateY(5px)" }, { opacity: 1, transform: "translateY(0)" }],
-        { duration: 260, easing: "ease-out" }
-      );
-      this.toast(`Filtro aplicado: ${region}`, "success");
-    });
-
-    this.rankingSelect?.addEventListener("change", e => {
-      const limit = Number.parseInt(e.target.value, 10) || 5;
-      document.querySelectorAll(".bar-row").forEach((row, index) => row.hidden = index >= limit);
-      this.toast(`Ranking atualizado para ${limit} posições.`, "info");
-    });
-  }
-
-  notifications() {
-    this.notificationButton?.addEventListener("click", e => {
-      e.stopPropagation();
-      document.querySelector(".notification-popover")?.remove();
-
-      const pop = document.createElement("div");
-      pop.className = "notification-popover visible";
-      pop.innerHTML = `
-        <div class="popover-header"><strong>Notificações</strong><span>2 novas</span></div>
-        <div class="notification-item"><i></i><div><strong>Dashboard pronto</strong><p>Os componentes de visualização foram carregados.</p></div></div>
-        <div class="notification-item"><i></i><div><strong>Integração pendente</strong><p>Conecte a fonte de dados para usar informações reais.</p></div></div>
-      `;
-      document.body.appendChild(pop);
-
-      const rect = this.notificationButton.getBoundingClientRect();
-      pop.style.top = `${rect.bottom + window.scrollY + 10}px`;
-      pop.style.right = `${Math.max(16, window.innerWidth - rect.right)}px`;
-
-      setTimeout(() => document.addEventListener("click", () => pop.remove(), { once: true }), 0);
-    });
-  }
-
-  profileMenu() {
-    this.profile?.addEventListener("click", e => {
-      e.stopPropagation();
-      document.querySelector(".profile-menu")?.remove();
-
-      const menu = document.createElement("div");
-      menu.className = "profile-menu visible";
-      menu.innerHTML = `
-        <button data-action="profile">Meu perfil</button>
-        <button data-action="settings">Configurações</button>
-        <button data-action="logout">Sair</button>
-      `;
-
-      document.body.appendChild(menu);
-      const rect = this.profile.getBoundingClientRect();
-      menu.style.top = `${rect.bottom + window.scrollY + 8}px`;
-      menu.style.right = `${Math.max(16, window.innerWidth - rect.right)}px`;
-
-      menu.addEventListener("click", async event => {
-        const action = event.target.closest("button")?.dataset.action;
-        if (!action) return;
-        if (action === "logout") {
-          await signOut(auth);
-          window.location.href = "login.html";
-        } else {
-          this.toast(action === "profile" ? "Perfil administrativo." : "Configurações administrativas.", "info");
-        }
-        menu.remove();
-      });
-
-      setTimeout(() => document.addEventListener("click", () => menu.remove(), { once: true }), 0);
-    });
-  }
-
-  actions() {
-    document.querySelector(".primary-btn")?.addEventListener("click", () => {
-      document.querySelector(".table-panel")?.scrollIntoView({ behavior: "smooth", block: "center" });
-      this.toast("Indicadores detalhados exibidos.", "success");
-    });
-
-    document.querySelector(".more-btn")?.addEventListener("click", () =>
-      this.toast("Mais opções do mapa estarão disponíveis na integração.", "info")
+  bindEvents() {
+    [this.filterRegiao, this.filterEstado, this.filterAno, this.rankingLimit].forEach(el =>
+      el.addEventListener("change", () => this.render())
     );
 
-    document.querySelector(".text-link")?.addEventListener("click", e => {
-      e.preventDefault();
-      this.rows.forEach(row => row.hidden = false);
-      if (this.search) this.search.value = "";
-      this.toast("Todos os registros demonstrativos foram exibidos.", "success");
+    this.filterRegiao.addEventListener("change", () => {
+      // Ao trocar a região, restringe o select de estados àquela região.
+      const regiao = this.filterRegiao.value;
+      const ufsDaRegiao = regiao ? ESTADOS.filter(e => e.regiao === regiao).map(e => e.uf) : null;
+      if (ufsDaRegiao && !ufsDaRegiao.includes(this.filterEstado.value)) {
+        this.filterEstado.value = "";
+      }
+    });
+
+    this.clearFiltersBtn.addEventListener("click", () => {
+      this.filterRegiao.value = "";
+      this.filterEstado.value = "";
+      this.filterAno.value = "";
+      this.tableSearch.value = "";
+      this.render();
+    });
+
+    this.tableSearch.addEventListener("input", () => this.render());
+
+    this.notificationButton?.addEventListener("click", e => {
+      e.stopPropagation();
+      this.toast("Painel público · dados sincronizados em tempo real com o Firestore.", "info");
+    });
+
+    this.exploreBtn?.addEventListener("click", () => {
+      document.querySelector(".table-panel")?.scrollIntoView({ behavior: "smooth", block: "center" });
     });
   }
 
@@ -181,21 +101,208 @@ class Dashboard {
     document.addEventListener("keydown", e => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
-        this.search?.focus();
-      }
-      if (e.key === "Escape") {
-        document.querySelector(".notification-popover, .profile-menu")?.remove();
-        this.search?.blur();
+        this.tableSearch?.focus();
       }
     });
   }
 
-  animateCards() {
-    document.querySelectorAll(".kpi-card, .panel").forEach((card, index) => {
-      card.animate(
-        [{ opacity: 0, transform: "translateY(10px)" }, { opacity: 1, transform: "translateY(0)" }],
-        { duration: 420, delay: Math.min(index * 40, 320), easing: "cubic-bezier(.2,.7,.2,1)", fill: "both" }
-      );
+  listenToRecords() {
+    onSnapshot(
+      collection(db, COLLECTION),
+      snapshot => {
+        this.allRecords = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        this.statusDot.textContent = "● Dados atualizados";
+        this.fillAnoOptions();
+        this.render();
+      },
+      error => {
+        this.statusDot.textContent = "● Erro ao conectar";
+        this.lastUpdate.textContent = "indisponível";
+        this.cityTableBody.innerHTML = `<tr><td colspan="5">Erro ao carregar dados: ${this.escape(error.message)}</td></tr>`;
+      }
+    );
+  }
+
+  fillAnoOptions() {
+    const anos = [...new Set(this.allRecords.map(r => r.ano).filter(Boolean))].sort((a, b) => b - a);
+    const atual = this.filterAno.value;
+    this.filterAno.innerHTML = `<option value="">Todos os anos</option>` +
+      anos.map(a => `<option value="${a}">${a}</option>`).join("");
+    if (anos.map(String).includes(atual)) this.filterAno.value = atual;
+  }
+
+  getFiltered() {
+    const regiao = this.filterRegiao.value;
+    const uf = this.filterEstado.value;
+    const ano = this.filterAno.value;
+
+    return this.allRecords.filter(r => {
+      if (regiao && r.regiao !== regiao) return false;
+      if (uf && r.uf !== uf) return false;
+      if (ano && String(r.ano) !== ano) return false;
+      return true;
+    });
+  }
+
+  render() {
+    const filtered = this.getFiltered();
+    this.lastUpdate.textContent = `${this.allRecords.length} registro${this.allRecords.length === 1 ? "" : "s"} no total`;
+
+    this.renderKpis(filtered);
+    this.renderChart(filtered);
+    this.renderRegions(filtered);
+    this.renderRanking(filtered);
+    this.renderTable(filtered);
+  }
+
+  renderKpis(rows) {
+    const municipios = rows.filter(r => r.tipo === "municipio");
+    const populacaoTotal = rows.reduce((sum, r) => sum + (Number(r.populacao) || 0), 0);
+    const pibTotal = rows.reduce((sum, r) => sum + (Number(r.pib) || 0), 0);
+    const estadosRepresentados = new Set(rows.map(r => r.uf).filter(Boolean));
+
+    this.kpiPopulacao.textContent = populacaoTotal ? populacaoTotal.toLocaleString("pt-BR") : "—";
+    this.kpiPopulacaoSub.textContent = rows.length ? `somatório de ${rows.length} registro(s)` : "nenhum registro no filtro";
+    this.kpiMunicipios.textContent = municipios.length.toLocaleString("pt-BR");
+    this.kpiEstados.textContent = estadosRepresentados.size.toLocaleString("pt-BR");
+    this.kpiPib.textContent = pibTotal ? `R$ ${pibTotal.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} bi` : "—";
+    this.kpiPibSub.textContent = rows.some(r => r.pib != null) ? "estimativa a partir dos registros" : "sem dados de PIB cadastrados";
+  }
+
+  renderChart(rows) {
+    // Agrupa população total por ano de referência.
+    const porAno = new Map();
+    rows.forEach(r => {
+      if (!r.ano) return;
+      porAno.set(r.ano, (porAno.get(r.ano) || 0) + (Number(r.populacao) || 0));
+    });
+
+    const pontos = [...porAno.entries()].sort((a, b) => a[0] - b[0]);
+
+    if (pontos.length < 2) {
+      this.chartSvg.style.display = "none";
+      this.chartEmptyHint.hidden = false;
+      this.chartYLabels.innerHTML = "";
+      this.chartXLabels.innerHTML = "";
+      return;
+    }
+
+    this.chartSvg.style.display = "";
+    this.chartEmptyHint.hidden = true;
+
+    const valores = pontos.map(p => p[1]);
+    const min = Math.min(...valores);
+    const max = Math.max(...valores);
+    const range = max - min || 1;
+
+    const width = 800;
+    const height = 310;
+    const padBottom = 28;
+    const usableHeight = height - padBottom;
+
+    const coords = pontos.map(([ano, valor], i) => {
+      const x = pontos.length === 1 ? 0 : (i / (pontos.length - 1)) * width;
+      const y = usableHeight - ((valor - min) / range) * usableHeight;
+      return { x, y };
+    });
+
+    const linePath = coords.map((c, i) => `${i === 0 ? "M" : "L"}${c.x.toFixed(1)} ${c.y.toFixed(1)}`).join(" ");
+    const areaPath = `${linePath} L${width} ${height} L0 ${height} Z`;
+
+    this.chartLinePath.setAttribute("d", linePath);
+    this.chartAreaPath.setAttribute("d", areaPath);
+
+    this.chartXLabels.innerHTML = pontos.map(([ano]) => `<span>${ano}</span>`).join("");
+
+    const steps = 5;
+    const labels = [];
+    for (let i = 0; i < steps; i++) {
+      const valor = max - (range / (steps - 1)) * i;
+      labels.push(this.formatCompact(valor));
+    }
+    this.chartYLabels.innerHTML = labels.map(l => `<span>${l}</span>`).join("");
+  }
+
+  renderRegions(rows) {
+    const porRegiao = new Map(REGIOES.map(r => [r, 0]));
+    rows.forEach(r => {
+      if (!r.regiao) return;
+      porRegiao.set(r.regiao, (porRegiao.get(r.regiao) || 0) + (Number(r.populacao) || 0));
+    });
+
+    const total = [...porRegiao.values()].reduce((a, b) => a + b, 0);
+    const entradas = [...porRegiao.entries()].sort((a, b) => b[1] - a[1]);
+
+    if (!total) {
+      this.regionList.innerHTML = `<p class="empty-hint">Sem dados de população cadastrados.</p>`;
+      this.regionProgressBar.innerHTML = "";
+      return;
+    }
+
+    this.regionList.innerHTML = entradas.map(([regiao, valor]) => {
+      const pct = ((valor / total) * 100).toFixed(1);
+      return `<div data-regiao="${regiao}"><i></i><span>${regiao}</span><strong>${this.formatCompact(valor)}</strong><em>${pct}%</em></div>`;
+    }).join("");
+
+    this.regionProgressBar.innerHTML = entradas.map(([, valor], i) => {
+      const pct = ((valor / total) * 100).toFixed(1);
+      return `<span style="width:${pct}%"></span>`;
+    }).join("");
+
+    this.regionList.querySelectorAll("[data-regiao]").forEach(el => {
+      el.addEventListener("click", () => {
+        this.filterRegiao.value = el.dataset.regiao;
+        this.filterEstado.value = "";
+        this.render();
+      });
+    });
+  }
+
+  renderRanking(rows) {
+    const limit = Number(this.rankingLimit.value) || 5;
+    const comPib = rows.filter(r => r.pib != null && r.uf).sort((a, b) => b.pib - a.pib).slice(0, limit);
+
+    if (!comPib.length) {
+      this.rankingBars.innerHTML = `<p class="empty-hint">Sem dados de PIB cadastrados para este filtro.</p>`;
+      return;
+    }
+
+    const max = comPib[0].pib;
+    this.rankingBars.innerHTML = comPib.map((r, i) => `
+      <div class="bar-row">
+        <b>${i + 1}</b>
+        <span>${this.escape(r.uf)}</span>
+        <div class="bar"><i style="width:${((r.pib / max) * 100).toFixed(1)}%"></i></div>
+        <strong>${Number(r.pib).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}</strong>
+      </div>
+    `).join("");
+  }
+
+  renderTable(rows) {
+    const termo = this.tableSearch.value.trim().toLowerCase();
+    let municipios = rows.filter(r => r.tipo === "municipio");
+    if (termo) municipios = municipios.filter(r => (r.nome || "").toLowerCase().includes(termo));
+    municipios = [...municipios].sort((a, b) => (Number(b.populacao) || 0) - (Number(a.populacao) || 0));
+
+    if (!municipios.length) {
+      this.cityTableBody.innerHTML = `<tr><td colspan="5">Nenhum município encontrado para este filtro.</td></tr>`;
+      return;
+    }
+
+    this.cityTableBody.innerHTML = municipios.map((r, i) => `
+      <tr class="city-row" data-id="${r.id}">
+        <td>${String(i + 1).padStart(2, "0")}</td>
+        <td><span class="city-dot"></span>${this.escape(r.nome)}</td>
+        <td>${this.escape(r.uf || "—")}</td>
+        <td>${(Number(r.populacao) || 0).toLocaleString("pt-BR")}</td>
+        <td>${r.ano ?? "—"}</td>
+      </tr>
+    `).join("");
+
+    this.cityTableBody.querySelectorAll(".city-row").forEach(row => {
+      row.addEventListener("click", () => {
+        window.location.href = `detalhe.html?id=${encodeURIComponent(row.dataset.id)}`;
+      });
     });
   }
 
@@ -206,24 +313,24 @@ class Dashboard {
     toast.innerHTML = `<span></span><label>${this.escape(message)}</label><button aria-label="Fechar">×</button>`;
     document.body.appendChild(toast);
     toast.querySelector("button").onclick = () => toast.remove();
-    setTimeout(() => toast.remove(), 3200);
+    setTimeout(() => toast.remove(), 3600);
+  }
+
+  formatCompact(value) {
+    if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+    if (value >= 1_000) return `${(value / 1_000).toFixed(1)}mil`;
+    return String(Math.round(value));
   }
 
   escape(value) {
     const div = document.createElement("div");
-    div.textContent = value;
+    div.textContent = value ?? "";
     return div.innerHTML;
   }
 }
 
 const dashboardRuntimeStyles = document.createElement("style");
 dashboardRuntimeStyles.textContent = `
-.is-focused{border-color:rgba(33,150,255,.58)!important;box-shadow:0 0 0 3px rgba(33,150,255,.08)}
-.notification-popover,.profile-menu{position:absolute;z-index:1000;border:1px solid rgba(84,154,226,.2);border-radius:14px;background:#0b213d;box-shadow:0 24px 60px rgba(0,0,0,.34);opacity:0;transform:translateY(-5px);padding:8px;transition:.18s}
-.notification-popover.visible,.profile-menu.visible{opacity:1;transform:translateY(0)}
-.notification-popover{width:300px;padding:12px}.popover-header{display:flex;justify-content:space-between;padding:4px;color:#edf5ff;font-size:12px}.popover-header span{color:#55c5ff;font-size:9px}
-.notification-item{display:flex;gap:10px;padding:10px 4px;border-top:1px solid rgba(84,154,226,.1)}.notification-item i{width:7px;height:7px;margin-top:4px;border-radius:50%;background:#2196ff}.notification-item strong{display:block;font-size:10px;color:#dcecff}.notification-item p{margin-top:3px;font-size:9px;color:#7992b1;line-height:1.45}
-.profile-menu{width:170px}.profile-menu button{display:block;width:100%;border:0;border-radius:9px;padding:10px;background:transparent;color:#adc2da;text-align:left;font-size:10px;cursor:pointer}.profile-menu button:hover{background:rgba(33,150,255,.1);color:white}
 .dashboard-toast{position:fixed;z-index:1100;right:20px;bottom:20px;display:flex;align-items:center;gap:10px;max-width:calc(100vw - 40px);padding:12px 13px;border:1px solid rgba(84,154,226,.2);border-radius:12px;background:rgba(8,27,49,.96);box-shadow:0 18px 40px rgba(0,0,0,.34);color:#cbdcf0;font-size:10px}.dashboard-toast>span{width:7px;height:7px;border-radius:50%;background:#56c8ff}.dashboard-toast--success>span{background:#10d5a2}.dashboard-toast button{margin-left:auto;border:0;background:transparent;color:#6e8aa9;font-size:17px;cursor:pointer}
 `;
 document.head.appendChild(dashboardRuntimeStyles);

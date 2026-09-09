@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IBGE Analytics — Detalhamento</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="dashboard.css">
+  <link rel="stylesheet" href="detalhe.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">IB</div>
+        <div>
+          <strong>IBGE</strong>
+          <span>Analytics</span>
+        </div>
+      </div>
+
+      <nav class="main-nav" aria-label="Navegação principal">
+        <a class="nav-item" href="dashboard.html">
+          <span class="nav-icon">⌂</span>
+          <span>Visão geral</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-bottom">
+        <a class="nav-item" href="login.html"><span class="nav-icon">⚙</span><span>Acesso administrativo</span></a>
+      </div>
+    </aside>
+
+    <main class="content">
+      <a href="dashboard.html" class="back-link">← Voltar ao dashboard</a>
+
+      <div id="detailState">
+        <p class="empty-hint">Carregando informações...</p>
+      </div>
+
+      <template id="detailTemplate">
+        <section class="page-heading">
+          <div>
+            <span class="eyebrow" data-field="tipo">LOCALIDADE</span>
+            <h1 data-field="nome">—</h1>
+            <p data-field="subtitulo">—</p>
+          </div>
+        </section>
+
+        <section class="kpi-grid">
+          <article class="kpi-card">
+            <div class="kpi-icon">◉</div>
+            <div class="kpi-body">
+              <span>População</span>
+              <strong data-field="populacao">—</strong>
+              <small>ano de referência: <span data-field="ano">—</span></small>
+            </div>
+          </article>
+
+          <article class="kpi-card">
+            <div class="kpi-icon">↗</div>
+            <div class="kpi-body">
+              <span>PIB</span>
+              <strong data-field="pib">—</strong>
+              <small>em bilhões de reais</small>
+            </div>
+          </article>
+
+          <article class="kpi-card">
+            <div class="kpi-icon">◇</div>
+            <div class="kpi-body">
+              <span>IDHM</span>
+              <strong data-field="idhm">—</strong>
+              <small>índice de 0 a 1</small>
+            </div>
+          </article>
+
+          <article class="kpi-card">
+            <div class="kpi-icon">▣</div>
+            <div class="kpi-body">
+              <span>Região</span>
+              <strong data-field="regiao">—</strong>
+              <small>UF: <span data-field="uf">—</span></small>
+            </div>
+          </article>
+        </section>
+
+        <section class="dashboard-grid">
+          <article class="panel wide">
+            <div class="panel-header">
+              <div>
+                <h2>Outras localidades da mesma região</h2>
+                <span>Comparativo rápido</span>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Nome</th><th>UF</th><th>População</th><th>PIB (R$ bi)</th></tr>
+                </thead>
+                <tbody data-field="relacionados"></tbody>
+              </table>
+            </div>
+          </article>
+        </section>
+      </template>
+    </main>
+  </div>
+
+  <script type="module" src="detalhe.js"></script>
+</body>
+</html>

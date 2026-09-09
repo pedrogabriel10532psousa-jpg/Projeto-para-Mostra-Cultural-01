@@ -1,0 +1,28 @@
+/* IBGE Analytics — detalhe.css */
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 16px 2px 0;
+  color: #5bc2ff;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.back-link:hover {
+  text-decoration: underline;
+}
+
+#detailState .empty-hint {
+  margin-top: 60px;
+  text-align: center;
+}
+
+[data-field="relacionados"] tr {
+  cursor: pointer;
+}
+
+[data-field="relacionados"] tr:hover td {
+  color: #fff;
+}
