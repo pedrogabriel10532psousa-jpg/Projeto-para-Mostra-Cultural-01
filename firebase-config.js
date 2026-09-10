@@ -21,12 +21,12 @@ import { getAuth } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-aut
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyC16LwDWd659_wV6MKz37nbF1wD5Sl5VLM",
-  authDomain: "dashboard-ibge-mostra-cultural.firebaseapp.com",
-  projectId: "dashboard-ibge-mostra-cultural",
-  storageBucket: "dashboard-ibge-mostra-cultural.firebasestorage.app",
-  messagingSenderId: "1343163947",
-  appId: "1:1343163947:web:49eb75cc31e8a660ebe46e"
+  apiKey: "SUA_API_KEY_AQUI",
+  authDomain: "SEU_PROJETO.firebaseapp.com",
+  projectId: "SEU_PROJETO",
+  storageBucket: "SEU_PROJETO.appspot.com",
+  messagingSenderId: "SEU_SENDER_ID",
+  appId: "SEU_APP_ID"
 };
 
 const app = initializeApp(firebaseConfig);
