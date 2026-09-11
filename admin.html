@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>IBGE Analytics — Administração de Dados</title>
+  <title>EcoData Brasil — Administração</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -14,10 +14,10 @@
   <div class="app-shell">
     <aside class="sidebar">
       <div class="brand">
-        <div class="brand-mark">IB</div>
+        <div class="brand-mark">🌿</div>
         <div>
-          <strong>IBGE</strong>
-          <span>Analytics</span>
+          <strong>EcoData</strong>
+          <span>Brasil</span>
         </div>
       </div>
 
@@ -47,7 +47,7 @@
       <header class="topbar">
         <div class="search-box">
           <span>⌕</span>
-          <input type="search" id="adminSearch" placeholder="Buscar por nome, UF ou região...">
+          <input type="search" id="adminSearch" placeholder="Buscar em qualquer tabela...">
         </div>
         <div class="top-actions">
           <div class="profile">
@@ -62,105 +62,192 @@
 
       <section class="page-heading">
         <div>
-          <span class="eyebrow">PAINEL DE DADOS</span>
+          <span class="eyebrow">PAINEL DE DADOS AMBIENTAIS</span>
           <h1>Administração de indicadores</h1>
-          <p>Cadastre, edite ou remova registros de estados e municípios.</p>
+          <p>Cadastre números de destaque, defina gráficos e alimente-os com pontos de dados.</p>
         </div>
       </section>
 
-      <section class="admin-grid">
+      <nav class="tabs" aria-label="Tabelas">
+        <button type="button" class="tab-btn active" data-tab="destaques">Números de destaque</button>
+        <button type="button" class="tab-btn" data-tab="graficos">Gráficos</button>
+        <button type="button" class="tab-btn" data-tab="pontos">Pontos de dados</button>
+      </nav>
+
+      <!-- ABA: DESTAQUES -->
+      <section class="admin-grid tab-panel" id="tab-destaques">
         <article class="panel form-panel">
           <div class="panel-header">
             <div>
-              <h2 id="formTitle">Novo registro</h2>
-              <span>Preencha os campos abaixo</span>
+              <h2 id="destaqueFormTitle">Novo número de destaque</h2>
+              <span>Estatística de impacto, ex.: "221 mil toneladas/dia"</span>
             </div>
           </div>
+          <form id="destaqueForm" class="record-form">
+            <input type="hidden" id="destaqueId">
+            <label for="destaqueTitulo">Título curto</label>
+            <input id="destaqueTitulo" type="text" placeholder="Ex.: Geração de lixo no Brasil" required>
 
-          <form id="recordForm" class="record-form">
-            <input type="hidden" id="recordId">
+            <label for="destaqueValor">Valor de destaque</label>
+            <input id="destaqueValor" type="text" placeholder="Ex.: 221 mil toneladas/dia" required>
 
-            <label for="tipo">Tipo de registro</label>
-            <select id="tipo" required>
-              <option value="municipio">Município</option>
-              <option value="estado">Estado</option>
+            <label for="destaqueDescricao">Frase explicativa</label>
+            <textarea id="destaqueDescricao" rows="2" placeholder="Ex.: O Brasil gera, em média, 221 mil toneladas de resíduos sólidos urbanos por dia." required></textarea>
+
+            <label for="destaqueTema">Tema</label>
+            <select id="destaqueTema" required>
+              <option value="Resíduos">Resíduos</option>
+              <option value="Desmatamento">Desmatamento</option>
+              <option value="Água">Água</option>
+              <option value="Outro">Outro</option>
             </select>
 
-            <label for="nome">Nome</label>
-            <input id="nome" type="text" placeholder="Ex.: São Paulo" required>
-
-            <label for="uf">Estado (UF)</label>
-            <select id="uf" required></select>
-
-            <label for="regiao">Região</label>
-            <input id="regiao" type="text" disabled>
-
-            <div class="form-row">
-              <div>
-                <label for="populacao">População</label>
-                <input id="populacao" type="number" min="0" placeholder="Ex.: 11451245" required>
-              </div>
-              <div>
-                <label for="ano">Ano de referência</label>
-                <input id="ano" type="number" min="1900" max="2100" placeholder="Ex.: 2025" required>
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div>
-                <label for="pib">PIB (em R$ bilhões)</label>
-                <input id="pib" type="number" min="0" step="0.01" placeholder="Ex.: 3456.8">
-              </div>
-              <div>
-                <label for="idhm">IDHM (0 a 1)</label>
-                <input id="idhm" type="number" min="0" max="1" step="0.001" placeholder="Ex.: 0.805">
-              </div>
-            </div>
+            <label for="destaqueFonte">Fonte dos dados</label>
+            <input id="destaqueFonte" type="text" placeholder="Ex.: ABREMA — Panorama dos Resíduos Sólidos 2024" required>
 
             <div class="form-actions">
-              <button type="submit" class="submit-btn" id="saveBtn">Salvar registro</button>
-              <button type="button" class="secondary-btn" id="cancelEditBtn" hidden>Cancelar edição</button>
+              <button type="submit" class="submit-btn" id="destaqueSaveBtn">Salvar destaque</button>
+              <button type="button" class="secondary-btn" id="destaqueCancelBtn" hidden>Cancelar edição</button>
             </div>
-            <div class="form-message" id="formMessage"></div>
+            <div class="form-message" id="destaqueFormMessage"></div>
           </form>
         </article>
 
         <article class="panel table-panel">
           <div class="panel-header">
             <div>
-              <h2>Registros cadastrados</h2>
-              <span id="recordCount">0 registros</span>
+              <h2>Destaques cadastrados</h2>
+              <span id="destaqueCount">0 registros</span>
             </div>
-            <select id="filterTipo" aria-label="Filtrar por tipo">
-              <option value="">Todos os tipos</option>
-              <option value="municipio">Municípios</option>
-              <option value="estado">Estados</option>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Título</th><th>Valor</th><th>Tema</th><th>Fonte</th><th></th></tr></thead>
+              <tbody id="destaqueBody"><tr><td colspan="5">Carregando...</td></tr></tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      <!-- ABA: GRÁFICOS -->
+      <section class="admin-grid tab-panel" id="tab-graficos" hidden>
+        <article class="panel form-panel">
+          <div class="panel-header">
+            <div>
+              <h2 id="graficoFormTitle">Novo gráfico</h2>
+              <span>Define o quê será exibido — os valores vêm da aba "Pontos de dados"</span>
+            </div>
+          </div>
+          <form id="graficoForm" class="record-form">
+            <input type="hidden" id="graficoId">
+            <label for="graficoTitulo">Título do gráfico</label>
+            <input id="graficoTitulo" type="text" placeholder="Ex.: Geração de resíduos por região" required>
+
+            <label for="graficoTipo">Tipo de gráfico</label>
+            <select id="graficoTipo" required>
+              <option value="barra">Barras</option>
+              <option value="linha">Linha</option>
+              <option value="pizza">Pizza</option>
+            </select>
+
+            <label for="graficoDescricao">Descrição para o visitante</label>
+            <textarea id="graficoDescricao" rows="2" placeholder="Explique o que o gráfico mostra e como interpretá-lo" required></textarea>
+
+            <div class="form-row">
+              <div>
+                <label for="graficoTema">Tema</label>
+                <select id="graficoTema" required>
+                  <option value="Resíduos">Resíduos</option>
+                  <option value="Desmatamento">Desmatamento</option>
+                  <option value="Água">Água</option>
+                  <option value="Outro">Outro</option>
+                </select>
+              </div>
+              <div>
+                <label for="graficoUnidade">Unidade dos valores</label>
+                <input id="graficoUnidade" type="text" placeholder="Ex.: km², %, mil toneladas" required>
+              </div>
+            </div>
+
+            <label for="graficoFonte">Fonte dos dados</label>
+            <input id="graficoFonte" type="text" placeholder="Ex.: INPE — Projeto PRODES" required>
+
+            <div class="form-actions">
+              <button type="submit" class="submit-btn" id="graficoSaveBtn">Salvar gráfico</button>
+              <button type="button" class="secondary-btn" id="graficoCancelBtn" hidden>Cancelar edição</button>
+            </div>
+            <div class="form-message" id="graficoFormMessage"></div>
+          </form>
+        </article>
+
+        <article class="panel table-panel">
+          <div class="panel-header">
+            <div>
+              <h2>Gráficos cadastrados</h2>
+              <span id="graficoCount">0 registros</span>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Título</th><th>Tipo</th><th>Tema</th><th>Unidade</th><th>Pontos</th><th></th></tr></thead>
+              <tbody id="graficoBody"><tr><td colspan="6">Carregando...</td></tr></tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      <!-- ABA: PONTOS DE DADOS -->
+      <section class="admin-grid tab-panel" id="tab-pontos" hidden>
+        <article class="panel form-panel">
+          <div class="panel-header">
+            <div>
+              <h2 id="pontoFormTitle">Novo ponto de dado</h2>
+              <span>Cada ponto é uma barra, fatia ou marcador do gráfico escolhido</span>
+            </div>
+          </div>
+          <form id="pontoForm" class="record-form">
+            <input type="hidden" id="pontoId">
+            <label for="pontoGrafico">Gráfico</label>
+            <select id="pontoGrafico" required></select>
+
+            <label for="pontoRotulo">Rótulo</label>
+            <input id="pontoRotulo" type="text" placeholder="Ex.: 2023, Sudeste, Adequada..." required>
+
+            <label for="pontoValor">Valor</label>
+            <input id="pontoValor" type="number" step="any" placeholder="Ex.: 9064" required>
+
+            <label for="pontoOrdem">Ordem de exibição (opcional)</label>
+            <input id="pontoOrdem" type="number" placeholder="Ex.: 1, 2, 3...">
+
+            <div class="form-actions">
+              <button type="submit" class="submit-btn" id="pontoSaveBtn">Salvar ponto</button>
+              <button type="button" class="secondary-btn" id="pontoCancelBtn" hidden>Cancelar edição</button>
+            </div>
+            <div class="form-message" id="pontoFormMessage"></div>
+          </form>
+        </article>
+
+        <article class="panel table-panel">
+          <div class="panel-header">
+            <div>
+              <h2>Pontos cadastrados</h2>
+              <span id="pontoCount">0 registros</span>
+            </div>
+            <select id="pontoFiltroGrafico" aria-label="Filtrar por gráfico">
+              <option value="">Todos os gráficos</option>
             </select>
           </div>
           <div class="table-wrap">
             <table>
-              <thead>
-                <tr>
-                  <th>Nome</th>
-                  <th>UF</th>
-                  <th>Região</th>
-                  <th>População</th>
-                  <th>PIB (R$ bi)</th>
-                  <th>IDHM</th>
-                  <th>Ano</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody id="recordsBody">
-                <tr><td colspan="8">Carregando registros...</td></tr>
-              </tbody>
+              <thead><tr><th>Gráfico</th><th>Rótulo</th><th>Valor</th><th>Ordem</th><th></th></tr></thead>
+              <tbody id="pontoBody"><tr><td colspan="5">Carregando...</td></tr></tbody>
             </table>
           </div>
         </article>
       </section>
 
       <footer class="footer">
-        <span>IBGE Analytics</span>
+        <span>EcoData Brasil</span>
         <span>Painel administrativo · alterações sincronizadas com o Firestore</span>
       </footer>
     </main>

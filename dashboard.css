@@ -390,6 +390,132 @@ a {
   color: #fff;
 }
 
+/* ---------- EcoData: destaques, temas e grade de gráficos ---------- */
+
+.theme-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 4px 0 14px;
+}
+
+.theme-tab {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 7px 14px;
+  background: rgba(9, 29, 54, .45);
+  color: #b7c9df;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.theme-tab.active {
+  border-color: rgba(33, 150, 255, .6);
+  background: rgba(33, 150, 255, .14);
+  color: #fff;
+}
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: 14px;
+}
+
+.chart-card .tag-tema {
+  display: inline-block;
+  margin-bottom: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, .06);
+  color: #b7c9df;
+}
+
+.chart-desc {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.chart-render {
+  margin-top: 16px;
+  min-height: 220px;
+}
+
+.chart-source {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border);
+  font-size: 10px;
+  color: #7f96b3;
+}
+
+/* barra genérica */
+.simple-bars {
+  display: grid;
+  gap: 10px;
+}
+
+.simple-bar-row {
+  display: grid;
+  grid-template-columns: 90px 1fr 70px;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  color: #c9d9ec;
+}
+
+.simple-bar-track {
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .06);
+  overflow: hidden;
+}
+
+.simple-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #2196ff, #6fe3ff);
+}
+
+/* pizza */
+.pie-wrap {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.pie-wrap svg {
+  width: 160px;
+  height: 160px;
+  flex-shrink: 0;
+}
+
+.pie-legend {
+  display: grid;
+  gap: 8px;
+  font-size: 11px;
+  color: #c9d9ec;
+}
+
+.pie-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pie-legend-item i {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
 .kpi-card,
 .panel {
   border: 1px solid var(--border);

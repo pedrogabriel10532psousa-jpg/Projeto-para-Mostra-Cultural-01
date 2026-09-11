@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>IBGE Analytics — Dashboard</title>
+  <title>EcoData Brasil — Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -13,10 +13,10 @@
   <div class="app-shell">
     <aside class="sidebar">
       <div class="brand">
-        <div class="brand-mark">IB</div>
+        <div class="brand-mark">🌿</div>
         <div>
-          <strong>IBGE</strong>
-          <span>Analytics</span>
+          <strong>EcoData</strong>
+          <span>Brasil</span>
         </div>
       </div>
 
@@ -30,7 +30,7 @@
       <div class="sidebar-card">
         <div class="sidebar-card-icon">✦</div>
         <strong>Dados abertos</strong>
-        <p>Painel público de acompanhamento de indicadores do Brasil.</p>
+        <p>Painel público sobre meio ambiente: resíduos, desmatamento e água no Brasil.</p>
       </div>
 
       <div class="sidebar-bottom">
@@ -42,190 +42,57 @@
       <header class="topbar">
         <div class="search-box">
           <span>⌕</span>
-          <input type="search" id="tableSearch" placeholder="Pesquisar por município...">
-          <kbd>Ctrl + K</kbd>
-        </div>
-        <div class="top-actions">
-          <button class="icon-btn" aria-label="Notificações">♧</button>
+          <input type="search" id="chartSearch" placeholder="Pesquisar gráfico ou tema...">
         </div>
       </header>
 
       <section class="page-heading">
         <div>
-          <span class="eyebrow">PAINEL DE DADOS</span>
-          <h1>Indicadores do Brasil</h1>
-          <p>Acompanhe os principais indicadores do país em um só lugar.</p>
+          <span class="eyebrow">MEIO AMBIENTE</span>
+          <h1>Indicadores ambientais do Brasil</h1>
+          <p>Resíduos sólidos, desmatamento e consumo de água — com fonte oficial em cada gráfico.</p>
         </div>
         <div class="update-card">
           <div class="update-icon">◷</div>
           <div>
-            <span>Registros carregados</span>
-            <strong id="lastUpdate">carregando...</strong>
+            <span>Status</span>
+            <strong id="statusText">carregando...</strong>
           </div>
-          <span class="status-dot" id="statusDot">● Conectando ao Firestore</span>
         </div>
       </section>
 
-      <section class="filters-bar" aria-label="Filtros">
-        <div class="filter-field">
-          <label for="filterRegiao">Região</label>
-          <select id="filterRegiao">
-            <option value="">Todas as regiões</option>
-          </select>
-        </div>
-        <div class="filter-field">
-          <label for="filterEstado">Estado</label>
-          <select id="filterEstado">
-            <option value="">Todos os estados</option>
-          </select>
-        </div>
-        <div class="filter-field">
-          <label for="filterAno">Período (ano)</label>
-          <select id="filterAno">
-            <option value="">Todos os anos</option>
-          </select>
-        </div>
-        <button type="button" id="clearFilters" class="secondary-btn">Limpar filtros</button>
+      <section class="kpi-grid" id="destaquesGrid">
+        <article class="kpi-card"><div class="kpi-body"><span>Carregando destaques...</span></div></article>
       </section>
 
-      <section class="kpi-grid">
-        <article class="kpi-card">
-          <div class="kpi-icon">◉</div>
-          <div class="kpi-body">
-            <span>População (filtro atual)</span>
-            <strong id="kpiPopulacao">—</strong>
-            <small id="kpiPopulacaoSub">carregando...</small>
-          </div>
-        </article>
-
-        <article class="kpi-card">
-          <div class="kpi-icon">▣</div>
-          <div class="kpi-body">
-            <span>Municípios cadastrados</span>
-            <strong id="kpiMunicipios">—</strong>
-            <small class="neutral">no filtro atual</small>
-          </div>
-        </article>
-
-        <article class="kpi-card">
-          <div class="kpi-icon">◇</div>
-          <div class="kpi-body">
-            <span>Estados representados</span>
-            <strong id="kpiEstados">—</strong>
-            <small class="neutral">no filtro atual</small>
-          </div>
-        </article>
-
-        <article class="kpi-card">
-          <div class="kpi-icon">↗</div>
-          <div class="kpi-body">
-            <span>PIB somado</span>
-            <strong id="kpiPib">—</strong>
-            <small id="kpiPibSub">carregando...</small>
-          </div>
-        </article>
+      <section class="theme-tabs" id="themeTabs" aria-label="Filtrar por tema">
+        <button type="button" class="theme-tab active" data-tema="">Todos os temas</button>
       </section>
 
-      <section class="dashboard-grid">
-        <article class="panel chart-panel wide">
-          <div class="panel-header">
-            <div>
-              <h2>Evolução da população</h2>
-              <span>Somatório por ano de referência, conforme os filtros ativos</span>
-            </div>
-          </div>
-
-          <div class="line-chart" aria-label="Gráfico de evolução populacional">
-            <div class="y-labels" id="chartYLabels"></div>
-            <div class="chart-area">
-              <div class="grid-line"></div>
-              <div class="grid-line"></div>
-              <div class="grid-line"></div>
-              <div class="grid-line"></div>
-              <div class="grid-line"></div>
-              <svg viewBox="0 0 800 310" preserveAspectRatio="none" role="img" id="chartSvg">
-                <defs>
-                  <linearGradient id="area" x1="0" x2="0" y1="0" y2="1">
-                    <stop offset="0%" stop-color="#2196ff" stop-opacity=".28"/>
-                    <stop offset="100%" stop-color="#2196ff" stop-opacity="0"/>
-                  </linearGradient>
-                </defs>
-                <path id="chartAreaPath" d="" fill="url(#area)"/>
-                <path id="chartLinePath" d="" fill="none" stroke="#2196ff" stroke-width="4"/>
-              </svg>
-              <div class="x-labels" id="chartXLabels"></div>
-            </div>
-            <p class="empty-hint" id="chartEmptyHint" hidden>Sem dados suficientes para desenhar o gráfico. Cadastre registros com anos diferentes no painel administrativo.</p>
-          </div>
-        </article>
-
-        <article class="panel region-panel">
-          <div class="panel-header">
-            <div>
-              <h2>População por região</h2>
-              <span>Distribuição regional · clique para filtrar</span>
-            </div>
-          </div>
-          <div class="region-content">
-            <div class="map-placeholder">
-              <div class="brazil-shape">BR</div>
-              <span>Mapa ilustrativo</span>
-            </div>
-            <div class="region-list" id="regionList"></div>
-          </div>
-          <div class="progress-bar" id="regionProgressBar"></div>
-        </article>
-
-        <article class="panel ranking-panel">
-          <div class="panel-header">
-            <div>
-              <h2>PIB por estado</h2>
-              <span>Em bilhões de R$</span>
-            </div>
-            <select id="rankingLimit" aria-label="Quantidade de estados">
-              <option value="5">Top 5</option>
-              <option value="10">Top 10</option>
-            </select>
-          </div>
-          <div class="bars" id="rankingBars">
-            <p class="empty-hint">Sem dados de PIB cadastrados ainda.</p>
-          </div>
-        </article>
-
-        <article class="panel table-panel wide">
-          <div class="panel-header">
-            <div>
-              <h2>Municípios</h2>
-              <span>Clique em um município para ver o detalhamento</span>
-            </div>
-          </div>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr><th>#</th><th>Município</th><th>Estado</th><th>População</th><th>Ano</th></tr>
-              </thead>
-              <tbody id="cityTableBody">
-                <tr><td colspan="5">Carregando dados...</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </article>
-
-        <article class="panel promo-panel">
-          <div class="promo-glow"></div>
-          <span class="eyebrow">DADOS ABERTOS</span>
-          <h2>Transforme dados em decisões.</h2>
-          <p>Explore indicadores, compare regiões e acompanhe a evolução do Brasil.</p>
-          <button class="primary-btn" id="exploreBtn">Explorar municípios <span>→</span></button>
-        </article>
+      <section class="charts-grid" id="chartsGrid">
+        <p class="empty-hint">Carregando gráficos...</p>
       </section>
 
       <footer class="footer">
-        <span>IBGE Analytics</span>
-        <span>Dados carregados diretamente do Firestore · painel demonstrativo</span>
+        <span>EcoData Brasil</span>
+        <span>Painel demonstrativo · dados sincronizados com o Firestore</span>
       </footer>
     </main>
   </div>
+
+  <template id="chartCardTemplate">
+    <article class="panel chart-card">
+      <div class="panel-header">
+        <div>
+          <span class="tag-tema" data-field="tema"></span>
+          <h2 data-field="titulo"></h2>
+          <span class="chart-desc" data-field="descricao"></span>
+        </div>
+      </div>
+      <div class="chart-render" data-field="render"></div>
+      <p class="chart-source">Fonte: <span data-field="fonte"></span></p>
+    </article>
+  </template>
 
   <script type="module" src="dashboard.js"></script>
 </body>

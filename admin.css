@@ -1,7 +1,35 @@
-/* IBGE Analytics — admin.css
+/* EcoData Brasil — admin.css
    Estilos específicos do painel de administração de dados.
    Reaproveita as variáveis e a base visual de dashboard.css.
 */
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin: 14px 0 4px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0;
+}
+
+.tab-btn {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 10px 16px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+
+.tab-btn.active {
+  color: #fff;
+  border-bottom-color: #2196ff;
+}
+
+.tab-btn:hover {
+  color: #dcecff;
+}
 
 .admin-grid {
   display: grid;
@@ -9,6 +37,10 @@
   gap: 14px;
   margin-top: 14px;
   align-items: start;
+}
+
+.admin-grid.tab-panel[hidden] {
+  display: none;
 }
 
 .form-panel {
@@ -29,7 +61,8 @@
 }
 
 .record-form input,
-.record-form select {
+.record-form select,
+.record-form textarea {
   width: 100%;
   border: 1px solid rgba(81, 147, 216, .2);
   border-radius: 11px;
@@ -38,7 +71,12 @@
   color: white;
   padding: 11px 12px;
   font-size: 12px;
+  font-family: inherit;
   transition: .2s ease;
+}
+
+.record-form textarea {
+  resize: vertical;
 }
 
 .record-form input:disabled {
@@ -47,7 +85,8 @@
 }
 
 .record-form input:focus,
-.record-form select:focus {
+.record-form select:focus,
+.record-form textarea:focus {
   border-color: rgba(33, 150, 255, .72);
   box-shadow: 0 0 0 3px rgba(33, 150, 255, .09);
 }
@@ -127,14 +166,18 @@
   letter-spacing: .3px;
 }
 
-.badge.municipio {
-  color: #8ff0d4;
-  background: rgba(16, 213, 162, .12);
-}
+.badge.barra { color: #6fc9ff; background: rgba(33, 150, 255, .12); }
+.badge.linha { color: #ffcf6f; background: rgba(255, 191, 71, .12); }
+.badge.pizza { color: #ff9fd6; background: rgba(255, 108, 199, .12); }
 
-.badge.estado {
-  color: #6fc9ff;
-  background: rgba(33, 150, 255, .12);
+.tag-tema {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, .06);
+  color: #b7c9df;
 }
 
 @media (max-width: 1100px) {
