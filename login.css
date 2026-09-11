@@ -61,14 +61,13 @@ body {
   gap: 12px;
 }
 
-.brand-mark {
+.brand-logo {
   width: 44px;
   height: 44px;
-  display: grid;
-  place-items: center;
+  display: block;
+  object-fit: contain;
   border-radius: 13px;
-  background: linear-gradient(135deg, #55c8ff, #167be7);
-  font-weight: 800;
+  background: rgba(255, 255, 255, 0.04);
   box-shadow: 0 14px 34px rgba(33, 150, 255, .25);
 }
 

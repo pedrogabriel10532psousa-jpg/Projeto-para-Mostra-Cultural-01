@@ -26,7 +26,7 @@
 
 
 
-# EcoData Brasil — README
+# EcoData Brasil — Dashboard
 
 Painel administrativo + dashboard público de indicadores ambientais do Brasil, construído em HTML/CSS/JS puro (sem framework, sem build step) e com Firebase (Authentication + Firestore) como backend.
 
