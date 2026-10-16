@@ -82,7 +82,14 @@ class Dashboard {
     `).join("");
 
     // Os KPI cards são criados dinamicamente pelo Firestore; atualize o AOS após renderizá-los.
-    if (window.AOS) window.AOS.refreshHard();
+    if (window.AOS) {
+      window.AOS.refreshHard();
+    } else {
+      // Fallback: não deixa os cards invisíveis se o CDN do AOS estiver indisponível.
+      this.destaquesGrid.querySelectorAll("[data-aos]").forEach(card => {
+        card.classList.add("aos-animate");
+      });
+    }
   }
 
   /* ---------- abas de tema ---------- */
