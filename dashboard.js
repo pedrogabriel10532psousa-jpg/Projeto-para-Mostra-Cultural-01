@@ -36,15 +36,28 @@ class Dashboard {
             if (entry.isIntersecting) {
               if (!chart) {
                 this.createChart(canvas);
-              } else if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+                return;
+              }
+
+              // Recalcula o tamanho quando o canvas volta à viewport.
+              // Isso evita que o Chart.js mantenha dimensões incorretas após
+              // a animação/transformação do cartão feita pelo AOS.
+              chart.resize();
+
+              if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+                chart.stop();
+                chart.update("none");
+              } else {
+                // Reinicia a animação apenas quando o gráfico reaparece.
                 chart.stop();
                 chart.reset();
                 chart.render();
               }
             } else if (chart) {
-              // Reinicia o estado para a próxima entrada na tela.
+              // Interrompe o trabalho fora da viewport, mas NÃO chama reset():
+              // deixar o gráfico em estado resetado pode fazê-lo parecer vazio
+              // até a próxima renderização e causar falhas ao rolar a página.
               chart.stop();
-              chart.reset();
             }
           });
         }, { threshold: 0.25 })
