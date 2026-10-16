@@ -454,13 +454,22 @@ a {
 .chart-render {
   position: relative;
   margin-top: 16px;
-  min-height: 260px;
+  min-height: 0;
 }
 
 .chart-render .chart-canvas {
   display: block;
   width: 100% !important;
-  height: 260px !important;
+  height: 220px !important;
+}
+
+/* A altura varia por tipo para manter a proporção visual dos gráficos originais. */
+.chart-render .chart-canvas-bar {
+  height: 180px !important;
+}
+
+.chart-render .chart-canvas-pie {
+  height: 190px !important;
 }
 
 @media (max-width: 520px) {
@@ -468,10 +477,16 @@ a {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .chart-render,
   .chart-render .chart-canvas {
-    min-height: 230px;
-    height: 230px !important;
+    height: 210px !important;
+  }
+
+  .chart-render .chart-canvas-bar {
+    height: 180px !important;
+  }
+
+  .chart-render .chart-canvas-pie {
+    height: 190px !important;
   }
 }
 
