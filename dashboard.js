@@ -151,6 +151,16 @@ class Dashboard {
 
       this.chartsGrid.appendChild(node);
     });
+
+    // Atualiza o AOS para reconhecer os gráficos recém-criados pelo Firestore.
+    if (window.AOS) {
+      window.AOS.refreshHard();
+    } else {
+      // Fallback: os gráficos permanecem visíveis se o CDN do AOS falhar.
+      this.chartsGrid.querySelectorAll("[data-aos]").forEach(card => {
+        card.classList.add("aos-animate");
+      });
+    }
   }
 
   renderBarra(pontos, unidade) {
