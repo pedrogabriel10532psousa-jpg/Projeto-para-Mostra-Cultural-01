@@ -25,6 +25,30 @@ class Dashboard {
     this.graficos = [];
     this.pontos = [];
     this.temaAtivo = "";
+
+    // Os gráficos só são animados quando entram na área visível.
+    this.chartObserver = "IntersectionObserver" in window
+      ? new IntersectionObserver(entries => {
+          entries.forEach(entry => {
+            const canvas = entry.target;
+            const chart = window.Chart?.getChart(canvas);
+
+            if (entry.isIntersecting) {
+              if (!chart) {
+                this.createChart(canvas);
+              } else if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+                chart.stop();
+                chart.reset();
+                chart.render();
+              }
+            } else if (chart) {
+              // Reinicia o estado para a próxima entrada na tela.
+              chart.stop();
+              chart.reset();
+            }
+          });
+        }, { threshold: 0.25 })
+      : null;
   }
 
   init() {
@@ -111,6 +135,12 @@ class Dashboard {
   /* ---------- gráficos ---------- */
 
   renderCharts() {
+    // Destrói as instâncias antigas antes de reconstruir os cartões e evita vazamentos.
+    this.chartsGrid.querySelectorAll(".chart-canvas").forEach(canvas => {
+      if (this.chartObserver) this.chartObserver.unobserve(canvas);
+      window.Chart?.getChart(canvas)?.destroy();
+    });
+
     const termo = this.chartSearch.value.trim().toLowerCase();
     let graficos = this.graficos;
     if (this.temaAtivo) graficos = graficos.filter(g => g.tema === this.temaAtivo);
@@ -141,6 +171,14 @@ class Dashboard {
 
       if (!pontos.length) {
         renderSlot.innerHTML = `<p class="empty-hint">Sem pontos de dados cadastrados para este gráfico ainda.</p>`;
+      } else if (window.Chart) {
+        const tipo = ["pizza", "linha", "barra"].includes(g.tipo) ? g.tipo : "barra";
+        renderSlot.innerHTML = `<canvas class="chart-canvas" role="img" aria-label="${this.escape(g.titulo || "Gráfico ambiental")}"></canvas>`;
+        const canvas = renderSlot.querySelector("canvas");
+        canvas.dataset.chartType = tipo;
+        canvas.dataset.labels = JSON.stringify(pontos.map(p => String(p.rotulo ?? "")));
+        canvas.dataset.values = JSON.stringify(pontos.map(p => Number(p.valor) || 0));
+        canvas.dataset.unit = g.unidade || "";
       } else if (g.tipo === "pizza") {
         renderSlot.innerHTML = this.renderPizza(pontos, g.unidade);
       } else if (g.tipo === "linha") {
@@ -152,6 +190,13 @@ class Dashboard {
       this.chartsGrid.appendChild(node);
     });
 
+    // Observa os canvases novos para animar cada gráfico somente ao entrar na tela.
+    const canvases = this.chartsGrid.querySelectorAll(".chart-canvas");
+    canvases.forEach(canvas => {
+      if (this.chartObserver) this.chartObserver.observe(canvas);
+      else this.createChart(canvas);
+    });
+
     // Atualiza o AOS para reconhecer os gráficos recém-criados pelo Firestore.
     if (window.AOS) {
       window.AOS.refreshHard();
@@ -161,6 +206,93 @@ class Dashboard {
         card.classList.add("aos-animate");
       });
     }
+  }
+
+  createChart(canvas) {
+    if (!window.Chart || window.Chart.getChart(canvas)) return;
+
+    let labels, values;
+    try {
+      labels = JSON.parse(canvas.dataset.labels || "[]");
+      values = JSON.parse(canvas.dataset.values || "[]");
+    } catch {
+      return;
+    }
+    if (!labels.length || !values.length) return;
+
+    const tipoOriginal = canvas.dataset.chartType;
+    const tipo = tipoOriginal === "pizza" ? "pie" : tipoOriginal;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const palette = ["#2196ff", "#10d5a2", "#ffbf47", "#ff6cc7", "#9b8cff", "#6fe3ff", "#ff8585"];
+    const colors = labels.map((_, index) => palette[index % palette.length]);
+    const unit = canvas.dataset.unit || "";
+    const isPie = tipo === "pie";
+
+    new window.Chart(canvas, {
+      type: tipo,
+      data: {
+        labels,
+        datasets: [{
+          label: unit ? `Valor (${unit})` : "Valor",
+          data: values,
+          backgroundColor: isPie ? colors : "rgba(33, 150, 255, 0.72)",
+          borderColor: isPie ? "#061224" : "#2196ff",
+          borderWidth: isPie ? 2 : 2,
+          borderRadius: tipo === "bar" ? 6 : 0,
+          borderSkipped: false,
+          pointBackgroundColor: "#56c8ff",
+          pointBorderColor: "#061224",
+          pointBorderWidth: 2,
+          pointRadius: tipo === "line" ? 4 : 0,
+          pointHoverRadius: tipo === "line" ? 6 : 0,
+          tension: 0.32,
+          fill: tipo === "line"
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: reducedMotion ? false : {
+          duration: 1200,
+          easing: "easeOutQuart",
+          animateRotate: true,
+          animateScale: true
+        },
+        plugins: {
+          legend: {
+            display: isPie,
+            position: "bottom",
+            labels: {
+              color: "#c9d9ec",
+              padding: 14,
+              usePointStyle: true,
+              pointStyle: "circle"
+            }
+          },
+          tooltip: {
+            callbacks: {
+              label(context) {
+                const value = Number(context.parsed?.y ?? context.parsed ?? context.raw) || 0;
+                return `${context.label ? context.label + ": " : ""}${value.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}${unit ? " " + unit : ""}`;
+              }
+            }
+          }
+        },
+        scales: isPie ? {} : {
+          x: {
+            ticks: { color: "#90a7c3", maxRotation: 35, minRotation: 0 },
+            grid: { color: "rgba(92, 133, 175, 0.10)" },
+            border: { color: "rgba(92, 133, 175, 0.18)" }
+          },
+          y: {
+            beginAtZero: true,
+            ticks: { color: "#90a7c3" },
+            grid: { color: "rgba(92, 133, 175, 0.12)" },
+            border: { display: false }
+          }
+        }
+      }
+    });
   }
 
   renderBarra(pontos, unidade) {

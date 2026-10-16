@@ -452,8 +452,27 @@ a {
 }
 
 .chart-render {
+  position: relative;
   margin-top: 16px;
-  min-height: 220px;
+  min-height: 260px;
+}
+
+.chart-render .chart-canvas {
+  display: block;
+  width: 100% !important;
+  height: 260px !important;
+}
+
+@media (max-width: 520px) {
+  .charts-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .chart-render,
+  .chart-render .chart-canvas {
+    min-height: 230px;
+    height: 230px !important;
+  }
 }
 
 .chart-source {
