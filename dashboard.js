@@ -135,6 +135,12 @@ class Dashboard {
   /* ---------- gráficos ---------- */
 
   renderCharts() {
+    // Destrói as instâncias antigas antes de reconstruir os cartões e evita vazamentos.
+    this.chartsGrid.querySelectorAll(".chart-canvas").forEach(canvas => {
+      if (this.chartObserver) this.chartObserver.unobserve(canvas);
+      window.Chart?.getChart(canvas)?.destroy();
+    });
+
     const termo = this.chartSearch.value.trim().toLowerCase();
     let graficos = this.graficos;
     if (this.temaAtivo) graficos = graficos.filter(g => g.tema === this.temaAtivo);
