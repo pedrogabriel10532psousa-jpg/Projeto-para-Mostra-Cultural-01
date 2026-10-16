@@ -83,7 +83,7 @@
   </div>
 
   <template id="chartCardTemplate">
-    <article class="panel chart-card">
+    <article class="panel chart-card" data-aos="zoom-in-down">
       <div class="panel-header">
         <div>
           <span class="tag-tema" data-field="tema"></span>
@@ -102,13 +102,14 @@
       AOS.init({
         duration: 800,
         easing: "ease-out-cubic",
-        once: true,
+        once: false,
+        mirror: true,
         offset: 80,
         delay: 0,
         disable: window.matchMedia("(prefers-reduced-motion: reduce)").matches
       });
     } else {
-      // Mantém os cards visíveis caso a biblioteca externa não carregue.
+      // Mantém os elementos visíveis caso a biblioteca externa não carregue.
       document.documentElement.classList.add("aos-unavailable");
     }
   </script>
