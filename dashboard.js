@@ -26,28 +26,21 @@ class Dashboard {
     this.pontos = [];
     this.temaAtivo = "";
 
-    // Os gráficos só são animados quando entram na área visível.
+    // Renderiza cada gráfico na primeira entrada na tela e mantém a instância
+    // viva ao rolar. Reiniciar/resetar gráficos em cada saída pode deixá-los
+    // em estado visual inicial ou interromper a animação ao voltar a rolar.
     this.chartObserver = "IntersectionObserver" in window
       ? new IntersectionObserver(entries => {
           entries.forEach(entry => {
-            const canvas = entry.target;
-            const chart = window.Chart?.getChart(canvas);
-
-            if (entry.isIntersecting) {
-              if (!chart) {
-                this.createChart(canvas);
-              } else if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-                chart.stop();
-                chart.reset();
-                chart.render();
-              }
-            } else if (chart) {
-              // Reinicia o estado para a próxima entrada na tela.
-              chart.stop();
-              chart.reset();
-            }
+            if (!entry.isIntersecting) return;
+            const canvas = entry.target.querySelector(".chart-canvas");
+            if (!canvas) return;
+            this.createChart(canvas);
+            // O gráfico é criado uma única vez; não reiniciamos sua animação
+            // em cada rolagem para evitar que desapareça ou fique travado.
+            this.chartObserver.unobserve(entry.target);
           });
-        }, { threshold: 0.25 })
+        }, { threshold: 0.01 })
       : null;
   }
 
@@ -135,10 +128,11 @@ class Dashboard {
   /* ---------- gráficos ---------- */
 
   renderCharts() {
-    // Destrói as instâncias antigas antes de reconstruir os cartões e evita vazamentos.
-    this.chartsGrid.querySelectorAll(".chart-canvas").forEach(canvas => {
-      if (this.chartObserver) this.chartObserver.unobserve(canvas);
-      window.Chart?.getChart(canvas)?.destroy();
+    // Remove as observações antigas e encerra instâncias antes de recriar os cards.
+    this.chartsGrid.querySelectorAll(".chart-render").forEach(slot => {
+      if (this.chartObserver) this.chartObserver.unobserve(slot);
+      const canvas = slot.querySelector(".chart-canvas");
+      if (canvas) window.Chart?.getChart(canvas)?.destroy();
     });
 
     const termo = this.chartSearch.value.trim().toLowerCase();
@@ -173,9 +167,12 @@ class Dashboard {
         renderSlot.innerHTML = `<p class="empty-hint">Sem pontos de dados cadastrados para este gráfico ainda.</p>`;
       } else if (window.Chart) {
         const tipo = ["pizza", "linha", "barra"].includes(g.tipo) ? g.tipo : "barra";
-        renderSlot.innerHTML = `<canvas class="chart-canvas" role="img" aria-label="${this.escape(g.titulo || "Gráfico ambiental")}"></canvas>`;
+        renderSlot.innerHTML = `<canvas class="chart-canvas chart-canvas-${tipo === "pizza" ? "pie" : tipo === "barra" ? "bar" : "line"}" role="img" aria-label="${this.escape(g.titulo || "Gráfico ambiental")}"></canvas>`;
         const canvas = renderSlot.querySelector("canvas");
         canvas.dataset.chartType = tipo;
+        // Mantém os gráficos compactos, semelhantes às versões SVG/CSS anteriores.
+        const altura = tipo === "barra" ? Math.max(150, Math.min(260, pontos.length * 29 + 24)) : tipo === "pizza" ? 190 : 220;
+        canvas.style.setProperty("height", `${altura}px`, "important");
         canvas.dataset.labels = JSON.stringify(pontos.map(p => String(p.rotulo ?? "")));
         canvas.dataset.values = JSON.stringify(pontos.map(p => Number(p.valor) || 0));
         canvas.dataset.unit = g.unidade || "";
@@ -190,10 +187,12 @@ class Dashboard {
       this.chartsGrid.appendChild(node);
     });
 
-    // Observa os canvases novos para animar cada gráfico somente ao entrar na tela.
-    const canvases = this.chartsGrid.querySelectorAll(".chart-canvas");
-    canvases.forEach(canvas => {
-      if (this.chartObserver) this.chartObserver.observe(canvas);
+    // Renderiza ao entrar na tela; sem IntersectionObserver, cria imediatamente.
+    const slots = this.chartsGrid.querySelectorAll(".chart-render");
+    slots.forEach(slot => {
+      const canvas = slot.querySelector(".chart-canvas");
+      if (!canvas) return;
+      if (this.chartObserver) this.chartObserver.observe(slot);
       else this.createChart(canvas);
     });
 
@@ -221,83 +220,166 @@ class Dashboard {
     if (!labels.length || !values.length) return;
 
     const tipoOriginal = canvas.dataset.chartType;
-    // O Firestore armazena os tipos em português; Chart.js exige os nomes em inglês.
     const tiposChartJs = { barra: "bar", linha: "line", pizza: "pie" };
     const tipo = tiposChartJs[tipoOriginal] || tipoOriginal;
     if (!["bar", "line", "pie"].includes(tipo)) {
       console.error("Tipo de gráfico não suportado:", tipoOriginal);
       return;
     }
+
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const palette = ["#2196ff", "#10d5a2", "#ffbf47", "#ff6cc7", "#9b8cff", "#6fe3ff", "#ff8585"];
     const colors = labels.map((_, index) => palette[index % palette.length]);
     const unit = canvas.dataset.unit || "";
     const isPie = tipo === "pie";
+    const isBar = tipo === "bar";
+
+    const originalStyle = {
+      color: "#c9d9ec",
+      muted: "#7f96b3",
+      blue: "#2196ff",
+      grid: "rgba(92, 133, 175, 0.11)"
+    };
+
+    const originalLabelsPlugin = {
+      id: "ecodataOriginalValueLabels",
+      afterDatasetsDraw(chart) {
+        if (chart.config.type === "pie") return;
+        const { ctx } = chart;
+        const meta = chart.getDatasetMeta(0);
+        ctx.save();
+        ctx.font = '10px Inter, sans-serif';
+        ctx.fillStyle = originalStyle.color;
+        ctx.textBaseline = "middle";
+        meta.data.forEach((element, index) => {
+          const value = Number(chart.data.datasets[0].data[index]) || 0;
+          const label = value.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
+          const pos = element.tooltipPosition();
+          if (chart.config.type === "bar") {
+            ctx.textAlign = "left";
+            ctx.fillText(label, pos.x + 7, pos.y);
+          } else {
+            ctx.textAlign = "center";
+            ctx.fillText(label, pos.x, pos.y - 12);
+          }
+        });
+        ctx.restore();
+      }
+    };
+
+    const dataset = {
+      label: unit ? `Valor (${unit})` : "Valor",
+      data: values,
+      backgroundColor: isPie ? colors : isBar
+        ? (context) => {
+            const chart = context.chart;
+            const area = chart.chartArea;
+            if (!area) return "#2196ff";
+            const gradient = chart.ctx.createLinearGradient(area.left, 0, area.right, 0);
+            gradient.addColorStop(0, "#2196ff");
+            gradient.addColorStop(1, "#6fe3ff");
+            return gradient;
+          }
+        : "rgba(33, 150, 255, 0.16)",
+      borderColor: isPie ? "#04101f" : "#2196ff",
+      borderWidth: isPie ? 1.5 : isBar ? 0 : 2.5,
+      borderRadius: isBar ? 999 : 0,
+      borderSkipped: false,
+      pointBackgroundColor: "#2196ff",
+      pointBorderColor: "#04101f",
+      pointBorderWidth: 2,
+      pointRadius: tipo === "line" ? 3.5 : 0,
+      pointHoverRadius: tipo === "line" ? 5 : 0,
+      tension: 0.32,
+      fill: tipo === "line"
+    };
+
+    const options = {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: reducedMotion ? false : {
+        duration: 1000,
+        easing: "easeOutQuart",
+        animateRotate: true,
+        animateScale: true
+      },
+      layout: {
+        padding: { top: tipo === "line" ? 18 : 4, right: isBar ? 32 : 8, bottom: 0, left: 0 }
+      },
+      plugins: {
+        legend: {
+          display: isPie,
+          position: "right",
+          labels: {
+            color: originalStyle.color,
+            padding: 10,
+            boxWidth: 9,
+            boxHeight: 9,
+            usePointStyle: true,
+            pointStyle: "circle",
+            font: { family: "Inter, sans-serif", size: 10 },
+            generateLabels(chart) {
+              const defaults = window.Chart.overrides.pie.plugins.legend.labels.generateLabels(chart);
+              const data = chart.data.datasets[0].data;
+              const total = data.reduce((sum, value) => sum + (Number(value) || 0), 0) || 1;
+              return defaults.map((item, index) => ({
+                ...item,
+                text: `${item.text} — ${((Number(data[index]) || 0) / total * 100).toFixed(1)}%`
+              }));
+            }
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label(context) {
+              const value = Number(context.parsed?.x ?? context.parsed?.y ?? context.parsed ?? context.raw) || 0;
+              return `${context.label ? context.label + ": " : ""}${value.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}${unit ? " " + unit : ""}`;
+            }
+          }
+        }
+      },
+      scales: isPie ? {} : isBar ? {
+        x: {
+          display: false,
+          beginAtZero: true,
+          grid: { display: false },
+          border: { display: false }
+        },
+        y: {
+          grid: { display: false },
+          border: { display: false },
+          ticks: {
+            color: originalStyle.color,
+            font: { family: "Inter, sans-serif", size: 10 },
+            padding: 5
+          }
+        }
+      } : {
+        x: {
+          ticks: {
+            color: originalStyle.muted,
+            maxRotation: 0,
+            minRotation: 0,
+            font: { family: "Inter, sans-serif", size: 10 }
+          },
+          grid: { display: false },
+          border: { color: "rgba(92, 133, 175, 0.18)" }
+        },
+        y: {
+          display: false,
+          suggestedMin: Math.min(...values) - (Math.max(...values) - Math.min(...values) || 1) * 0.15,
+          suggestedMax: Math.max(...values) + (Math.max(...values) - Math.min(...values) || 1) * 0.2,
+          grid: { color: originalStyle.grid, drawTicks: false },
+          border: { display: false }
+        }
+      }
+    };
 
     new window.Chart(canvas, {
       type: tipo,
-      data: {
-        labels,
-        datasets: [{
-          label: unit ? `Valor (${unit})` : "Valor",
-          data: values,
-          backgroundColor: isPie ? colors : "rgba(33, 150, 255, 0.72)",
-          borderColor: isPie ? "#061224" : "#2196ff",
-          borderWidth: isPie ? 2 : 2,
-          borderRadius: tipo === "bar" ? 6 : 0,
-          borderSkipped: false,
-          pointBackgroundColor: "#56c8ff",
-          pointBorderColor: "#061224",
-          pointBorderWidth: 2,
-          pointRadius: tipo === "line" ? 4 : 0,
-          pointHoverRadius: tipo === "line" ? 6 : 0,
-          tension: 0.32,
-          fill: tipo === "line"
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: reducedMotion ? false : {
-          duration: 1200,
-          easing: "easeOutQuart",
-          animateRotate: true,
-          animateScale: true
-        },
-        plugins: {
-          legend: {
-            display: isPie,
-            position: "bottom",
-            labels: {
-              color: "#c9d9ec",
-              padding: 14,
-              usePointStyle: true,
-              pointStyle: "circle"
-            }
-          },
-          tooltip: {
-            callbacks: {
-              label(context) {
-                const value = Number(context.parsed?.y ?? context.parsed ?? context.raw) || 0;
-                return `${context.label ? context.label + ": " : ""}${value.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}${unit ? " " + unit : ""}`;
-              }
-            }
-          }
-        },
-        scales: isPie ? {} : {
-          x: {
-            ticks: { color: "#90a7c3", maxRotation: 35, minRotation: 0 },
-            grid: { color: "rgba(92, 133, 175, 0.10)" },
-            border: { color: "rgba(92, 133, 175, 0.18)" }
-          },
-          y: {
-            beginAtZero: true,
-            ticks: { color: "#90a7c3" },
-            grid: { color: "rgba(92, 133, 175, 0.12)" },
-            border: { display: false }
-          }
-        }
-      }
+      data: { labels, datasets: [dataset] },
+      options: isBar ? { ...options, indexAxis: "y" } : options,
+      plugins: [originalLabelsPlugin]
     });
   }
 
