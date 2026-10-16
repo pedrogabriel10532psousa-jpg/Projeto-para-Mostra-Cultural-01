@@ -26,30 +26,21 @@ class Dashboard {
     this.pontos = [];
     this.temaAtivo = "";
 
-    // Observa o contêiner estável, não o canvas: o Chart.js pode alterar
-    // o tamanho do canvas durante a animação e disparar interseções inconsistentes.
+    // Renderiza cada gráfico na primeira entrada na tela e mantém a instância
+    // viva ao rolar. Reiniciar/resetar gráficos em cada saída pode deixá-los
+    // em estado visual inicial ou interromper a animação ao voltar a rolar.
     this.chartObserver = "IntersectionObserver" in window
       ? new IntersectionObserver(entries => {
           entries.forEach(entry => {
+            if (!entry.isIntersecting) return;
             const canvas = entry.target.querySelector(".chart-canvas");
             if (!canvas) return;
-
-            const chart = window.Chart?.getChart(canvas);
-            if (entry.isIntersecting) {
-              if (!chart) {
-                this.createChart(canvas);
-              } else if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-                chart.stop();
-                chart.reset();
-                chart.render();
-              }
-            } else if (chart) {
-              // Prepara a animação para a próxima entrada sem destruir o canvas.
-              chart.stop();
-              chart.reset();
-            }
+            this.createChart(canvas);
+            // O gráfico é criado uma única vez; não reiniciamos sua animação
+            // em cada rolagem para evitar que desapareça ou fique travado.
+            this.chartObserver.unobserve(entry.target);
           });
-        }, { threshold: 0.15 })
+        }, { threshold: 0.01 })
       : null;
   }
 
@@ -137,7 +128,7 @@ class Dashboard {
   /* ---------- gráficos ---------- */
 
   renderCharts() {
-    // Remove as observações dos contêineres antigos e encerra as instâncias.
+    // Remove as observações antigas e encerra instâncias antes de recriar os cards.
     this.chartsGrid.querySelectorAll(".chart-render").forEach(slot => {
       if (this.chartObserver) this.chartObserver.unobserve(slot);
       const canvas = slot.querySelector(".chart-canvas");
@@ -196,7 +187,7 @@ class Dashboard {
       this.chartsGrid.appendChild(node);
     });
 
-    // Observa contêineres estáveis; o canvas pode mudar de tamanho ao animar.
+    // Renderiza ao entrar na tela; sem IntersectionObserver, cria imediatamente.
     const slots = this.chartsGrid.querySelectorAll(".chart-render");
     slots.forEach(slot => {
       const canvas = slot.querySelector(".chart-canvas");
