@@ -70,8 +70,8 @@ class Dashboard {
       this.destaquesGrid.innerHTML = `<p class="empty-hint">Nenhum número de destaque cadastrado ainda.</p>`;
       return;
     }
-    this.destaquesGrid.innerHTML = this.destaques.map(d => `
-      <article class="kpi-card">
+    this.destaquesGrid.innerHTML = this.destaques.map((d, index) => `
+      <article class="kpi-card" data-aos="fade-up" data-aos-delay="${Math.min(index * 120, 480)}">
         <div class="kpi-icon">◉</div>
         <div class="kpi-body">
           <span>${this.escape(d.titulo)}</span>
@@ -80,6 +80,9 @@ class Dashboard {
         </div>
       </article>
     `).join("");
+
+    // Os KPI cards são criados dinamicamente pelo Firestore; atualize o AOS após renderizá-los.
+    if (window.AOS) window.AOS.refreshHard();
   }
 
   /* ---------- abas de tema ---------- */
