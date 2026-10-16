@@ -26,7 +26,9 @@ class Dashboard {
     this.pontos = [];
     this.temaAtivo = "";
 
-    // Os gráficos só são animados quando entram na área visível.
+    // Cria o gráfico ao entrar na tela e destrói a instância ao sair.
+    // Recriar a instância é mais confiável que chamar reset()/render() repetidamente:
+    // evita canvas preso no estado inicial ao voltar a rolar a página.
     this.chartObserver = "IntersectionObserver" in window
       ? new IntersectionObserver(entries => {
           entries.forEach(entry => {
@@ -34,20 +36,13 @@ class Dashboard {
             const chart = window.Chart?.getChart(canvas);
 
             if (entry.isIntersecting) {
-              if (!chart) {
-                this.createChart(canvas);
-              } else if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-                chart.stop();
-                chart.reset();
-                chart.render();
-              }
+              if (!chart) this.createChart(canvas);
             } else if (chart) {
-              // Reinicia o estado para a próxima entrada na tela.
               chart.stop();
-              chart.reset();
+              chart.destroy();
             }
           });
-        }, { threshold: 0.25 })
+        }, { threshold: 0.15 })
       : null;
   }
 
