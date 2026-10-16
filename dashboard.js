@@ -221,7 +221,13 @@ class Dashboard {
     if (!labels.length || !values.length) return;
 
     const tipoOriginal = canvas.dataset.chartType;
-    const tipo = tipoOriginal === "pizza" ? "pie" : tipoOriginal;
+    // O Firestore armazena os tipos em português; Chart.js exige os nomes em inglês.
+    const tiposChartJs = { barra: "bar", linha: "line", pizza: "pie" };
+    const tipo = tiposChartJs[tipoOriginal] || tipoOriginal;
+    if (!["bar", "line", "pie"].includes(tipo)) {
+      console.error("Tipo de gráfico não suportado:", tipoOriginal);
+      return;
+    }
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const palette = ["#2196ff", "#10d5a2", "#ffbf47", "#ff6cc7", "#9b8cff", "#6fe3ff", "#ff8585"];
     const colors = labels.map((_, index) => palette[index % palette.length]);
