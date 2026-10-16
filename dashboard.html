@@ -98,14 +98,19 @@
 
   <script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
   <script>
-    AOS.init({
-      duration: 800,
-      easing: "ease-out-cubic",
-      once: true,
-      offset: 80,
-      delay: 0,
-      disable: window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    });
+    if (window.AOS) {
+      AOS.init({
+        duration: 800,
+        easing: "ease-out-cubic",
+        once: true,
+        offset: 80,
+        delay: 0,
+        disable: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      });
+    } else {
+      // Mantém os cards visíveis caso a biblioteca externa não carregue.
+      document.documentElement.classList.add("aos-unavailable");
+    }
   </script>
   <script type="module" src="dashboard.js"></script>
 </body>
