@@ -26,20 +26,27 @@ class Dashboard {
     this.pontos = [];
     this.temaAtivo = "";
 
-    // Cria o gráfico ao entrar na tela e destrói a instância ao sair.
-    // Recriar a instância é mais confiável que chamar reset()/render() repetidamente:
-    // evita canvas preso no estado inicial ao voltar a rolar a página.
+    // Observa o contêiner estável, não o canvas: o Chart.js pode alterar
+    // o tamanho do canvas durante a animação e disparar interseções inconsistentes.
     this.chartObserver = "IntersectionObserver" in window
       ? new IntersectionObserver(entries => {
           entries.forEach(entry => {
-            const canvas = entry.target;
-            const chart = window.Chart?.getChart(canvas);
+            const canvas = entry.target.querySelector(".chart-canvas");
+            if (!canvas) return;
 
+            const chart = window.Chart?.getChart(canvas);
             if (entry.isIntersecting) {
-              if (!chart) this.createChart(canvas);
+              if (!chart) {
+                this.createChart(canvas);
+              } else if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+                chart.stop();
+                chart.reset();
+                chart.render();
+              }
             } else if (chart) {
+              // Prepara a animação para a próxima entrada sem destruir o canvas.
               chart.stop();
-              chart.destroy();
+              chart.reset();
             }
           });
         }, { threshold: 0.15 })
@@ -130,10 +137,11 @@ class Dashboard {
   /* ---------- gráficos ---------- */
 
   renderCharts() {
-    // Destrói as instâncias antigas antes de reconstruir os cartões e evita vazamentos.
-    this.chartsGrid.querySelectorAll(".chart-canvas").forEach(canvas => {
-      if (this.chartObserver) this.chartObserver.unobserve(canvas);
-      window.Chart?.getChart(canvas)?.destroy();
+    // Remove as observações dos contêineres antigos e encerra as instâncias.
+    this.chartsGrid.querySelectorAll(".chart-render").forEach(slot => {
+      if (this.chartObserver) this.chartObserver.unobserve(slot);
+      const canvas = slot.querySelector(".chart-canvas");
+      if (canvas) window.Chart?.getChart(canvas)?.destroy();
     });
 
     const termo = this.chartSearch.value.trim().toLowerCase();
@@ -188,10 +196,12 @@ class Dashboard {
       this.chartsGrid.appendChild(node);
     });
 
-    // Observa os canvases novos para animar cada gráfico somente ao entrar na tela.
-    const canvases = this.chartsGrid.querySelectorAll(".chart-canvas");
-    canvases.forEach(canvas => {
-      if (this.chartObserver) this.chartObserver.observe(canvas);
+    // Observa contêineres estáveis; o canvas pode mudar de tamanho ao animar.
+    const slots = this.chartsGrid.querySelectorAll(".chart-render");
+    slots.forEach(slot => {
+      const canvas = slot.querySelector(".chart-canvas");
+      if (!canvas) return;
+      if (this.chartObserver) this.chartObserver.observe(slot);
       else this.createChart(canvas);
     });
 
