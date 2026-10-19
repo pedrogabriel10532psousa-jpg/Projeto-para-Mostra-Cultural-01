@@ -70,7 +70,7 @@ a {
   height: 42px;
   display: grid;
   place-items: center;
-  border-radius: 13px;
+  border-radius: 20px;
   background: linear-gradient(135deg, #54c7ff, #147ae6);
   color: white;
   font-weight: 800;
