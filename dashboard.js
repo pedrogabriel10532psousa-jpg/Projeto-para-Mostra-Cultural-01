@@ -28,27 +28,24 @@ class Dashboard {
 
     // Os gráficos só são animados quando entram na área visível.
     this.chartObserver = "IntersectionObserver" in window
-      ? new IntersectionObserver(entries => {
-          entries.forEach(entry => {
-            const canvas = entry.target;
-            const chart = window.Chart?.getChart(canvas);
+  ? new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        // Ao sair da tela, não mexe no gráfico (evita ele ficar vazio)
+        if (!entry.isIntersecting) return;
 
-            if (entry.isIntersecting) {
-              if (!chart) {
-                this.createChart(canvas);
-              } else if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-                chart.stop();
-                chart.reset();
-                chart.render();
-              }
-            } else if (chart) {
-              // Reinicia o estado para a próxima entrada na tela.
-              chart.stop();
-              chart.reset();
-            }
-          });
-        }, { threshold: 0.25 })
-      : null;
+        const canvas = entry.target;
+        const chart = window.Chart?.getChart(canvas);
+
+        if (!chart) {
+          this.createChart(canvas);
+        } else {
+          chart.stop();    // cancela qualquer animação em andamento
+          chart.reset();   // volta ao estado inicial da animação
+          chart.update();  // anima até o estado final
+        }
+      });
+    }, { threshold: 0.25 })
+  : null;
   }
 
   init() {
